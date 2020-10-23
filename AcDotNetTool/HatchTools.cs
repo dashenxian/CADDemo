@@ -1,12 +1,8 @@
 ﻿using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace AcDotNetTools
+namespace AcDotNetTool
 {
     public static partial class HatchTools
     {

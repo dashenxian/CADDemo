@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Mime;
-using System.Text;
-using System.Threading.Tasks;
-using AcDotNetTools;
+using AcDotNetTool;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
@@ -23,7 +18,7 @@ namespace TestCADRegion
             var point1 = new Point3d(0, 0, 0);
             var point2 = SelectPoint("选择第二点");
             var ang = point1.GetAngleToXAxis(point2.ToPoint3d());
-            var ang1 = BaseTools.Angle(point1, point2.ToPoint3d());
+            var ang1 = GeometryTools.Angle(point1, point2.ToPoint3d());
             ed.WriteMessage($"角度1:{BaseTools.AngleToDegree(ang)}");
             ed.WriteMessage($"角度2:{BaseTools.AngleToDegree(ang1)}");
         }
