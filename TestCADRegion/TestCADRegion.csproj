@@ -31,26 +31,40 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="accoremgd">
-      <HintPath>D:\RDM\PDMCODE\GDDLL\ProductDLL\Winform\GdMapping\CAD\R2014\accoremgd.dll</HintPath>
+    <Reference Include="accoremgd, Version=19.1.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Lib\CAD\R2014\accoremgd.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="AcCui">
-      <HintPath>D:\RDM\PDMCODE\GDDLL\ProductDLL\Winform\GdMapping\CAD\R2014\AcCui.dll</HintPath>
+    <Reference Include="AcCui, Version=19.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Lib\CAD\R2014\AcCui.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="acdbmgd">
-      <HintPath>D:\RDM\PDMCODE\GDDLL\ProductDLL\Winform\GdMapping\CAD\R2014\acdbmgd.dll</HintPath>
+    <Reference Include="acdbmgd, Version=19.1.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Lib\CAD\R2014\acdbmgd.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="acdbmgdbrep">
-      <HintPath>D:\RDM\PDMCODE\GDDLL\ProductDLL\Winform\GdMapping\CAD\R2014\acdbmgdbrep.dll</HintPath>
+    <Reference Include="acdbmgdbrep, Version=19.1.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Lib\CAD\R2014\acdbmgdbrep.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="acmgd">
-      <HintPath>D:\RDM\PDMCODE\GDDLL\ProductDLL\Winform\GdMapping\CAD\R2014\acmgd.dll</HintPath>
+    <Reference Include="acmgd, Version=19.1.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Lib\CAD\R2014\acmgd.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="AcWindows">
-      <HintPath>D:\RDM\PDMCODE\GDDLL\ProductDLL\Winform\GdMapping\CAD\R2014\AcWindows.dll</HintPath>
+    <Reference Include="AcWindows, Version=19.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Lib\CAD\R2014\AcWindows.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="AdWindows">
-      <HintPath>D:\RDM\PDMCODE\GDDLL\ProductDLL\Winform\GdMapping\CAD\R2014\AdWindows.dll</HintPath>
+    <Reference Include="AdWindows, Version=4.0.24.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Lib\CAD\R2014\AdWindows.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -66,6 +80,13 @@
     <Compile Include="Fillet.cs" />
     <Compile Include="PLineBulge.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="曲线上中间点距离.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AcDotNetTool\AcDotNetTool.csproj">
+      <Project>{02c11163-bd87-4411-87f2-11f455425dd4}</Project>
+      <Name>AcDotNetTool</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

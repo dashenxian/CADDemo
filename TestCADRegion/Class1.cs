@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Mime;
 using System.Text;
 using System.Threading.Tasks;
+using AcDotNetTools;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
@@ -14,6 +15,18 @@ namespace TestCADRegion
 {
     public class Class1
     {
+
+        [CommandMethod("Test")]
+        public void Test()
+        {
+            Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
+            var point1 = new Point3d(0, 0, 0);
+            var point2 = SelectPoint("选择第二点");
+            var ang = point1.GetAngleToXAxis(point2.ToPoint3d());
+            var ang1 = BaseTools.Angle(point1, point2.ToPoint3d());
+            ed.WriteMessage($"角度1:{BaseTools.AngleToDegree(ang)}");
+            ed.WriteMessage($"角度2:{BaseTools.AngleToDegree(ang1)}");
+        }
         [CommandMethod("IsBound")]
         public void IsBound()
         {
@@ -36,7 +49,7 @@ namespace TestCADRegion
 
             Vector2d maxV;
             Vector2d minV;
-            if (v1.Angle>v2.Angle)
+            if (v1.Angle > v2.Angle)
             {
                 maxV = v1;
                 minV = v2;
@@ -47,7 +60,7 @@ namespace TestCADRegion
                 minV = v1;
             }
             Vector2d zx = new Vector2d(minV.X, minV.Y);
-            if (maxV.Angle-minV.Angle>Math.PI/2)
+            if (maxV.Angle - minV.Angle > Math.PI / 2)
             {
                 zx = Rotate(zx, curPoint, -angle / 2);
             }
@@ -56,8 +69,8 @@ namespace TestCADRegion
                 zx = Rotate(zx, curPoint, angle / 2);
             }
             var mod = Math.Sqrt(Math.Pow(zx.X, 2) + Math.Pow(zx.Y, 2));
-            var li = new Line(new Point3d(0, 0, 0), new Point3d(zx.X/ mod, zx.Y/ mod, 0));
-            Move(li, new Point3d(0, 0, 0), curPoint.Point2dToPoint3d());
+            var li = new Line(new Point3d(0, 0, 0), new Point3d(zx.X / mod, zx.Y / mod, 0));
+            Move(li, new Point3d(0, 0, 0), curPoint.ToPoint3d());
             ToModelSpace(li);
             //Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
             //Entity ent = Select("\n 选择对象");
@@ -126,24 +139,7 @@ namespace TestCADRegion
 
             return ent.TransformBy(mt);
         }
-        /// <summary>
-        /// 角度转化为弧度
-        /// </summary>
-        /// <param name="angle">角度</param>
-        /// <returns>弧度</returns>
-        public static double AngToRad(double angle)
-        {
-            return angle * Math.PI / 180;
-        }
-        /// <summary>
-        /// 弧度转化为角度
-        /// </summary>
-        /// <param name="Rad">弧度</param>
-        /// <returns>角度</returns>
-        public static double RadToAng(double rad)
-        {
-            return rad * 180 / Math.PI;
-        }
+
         public static Point2d SelectPoint(string word)
         {
             Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
@@ -231,18 +227,6 @@ namespace TestCADRegion
                 }
             }
             return true;
-        }
-    }
-
-    public static class Extension
-    {
-        public static Point3d Point2dToPoint3d(this Point2d point)
-        {
-            return new Point3d(point.X, point.Y, 0);
-        }
-        public static Point2d Point3dToPoint2d(this Point3d point)
-        {
-            return new Point2d(point.X, point.Y);
         }
     }
 }

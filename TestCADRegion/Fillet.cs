@@ -12,7 +12,7 @@ using AcAp = Autodesk.AutoCAD.ApplicationServices.Application;
 namespace TestCADRegion
 {
     /// <summary>
-    /// 
+    /// 倒角
     /// </summary>
     public class Fillet
     {
