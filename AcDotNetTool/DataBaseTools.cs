@@ -97,7 +97,7 @@ namespace AcDotNetTool
 
         #endregion
 
-        
+
         #region 数据库克隆
 
         /// <summary>
@@ -130,20 +130,11 @@ namespace AcDotNetTool
 
         #region 获取块表
         /// <summary>
-        /// 获取块表记录ObjectId
-        /// </summary>
-        /// <param name="db">数据库</param>
-        /// <returns></returns>
-        public static ObjectId BlockTableId(Database db)
-        {
-            return db.BlockTableId;
-        }
-        /// <summary>
         /// 获取块表
         /// </summary>
         /// <param name="db">数据库</param>
         /// <returns></returns>
-        public static BlockTable BlockTable(Database db)
+        public static BlockTable BlockTable(this Database db)
         {
             BlockTable bt;
             using (Transaction tr = db.TransactionManager.StartTransaction())
@@ -189,7 +180,7 @@ namespace AcDotNetTool
         /// <param name="ent">对象</param>
         /// <param name="db">数据库</param>
         /// <returns></returns>
-        public static ObjectId AddIn(Entity ent, Database db)
+        public static ObjectId AddIn(this Entity ent, Database db)
         {
             ObjectId id;
             using (Transaction tr = db.TransactionManager.StartTransaction())
@@ -207,7 +198,7 @@ namespace AcDotNetTool
         /// <param name="ent">对象</param>
         /// <param name="block">块定义</param>
         /// <returns></returns>
-        public static ObjectId AddEntToBlock(Entity ent, BlockTableRecord block)
+        public static ObjectId AddEntToBlock(this Entity ent, BlockTableRecord block)
         {
             ObjectId id = new ObjectId();
             Database db = block.Database;
@@ -255,7 +246,7 @@ namespace AcDotNetTool
         /// </summary>
         /// <param name="db"></param>
         /// <returns></returns>
-        public static ObjectId ModelSpaceId(Database db)
+        public static ObjectId ModelSpaceId(this Database db)
         {
             return SymbolUtilityServices.GetBlockModelSpaceId(db);
         }
@@ -351,21 +342,11 @@ namespace AcDotNetTool
         #region 获得层表
 
         /// <summary>
-        /// 获得层表ObjectId
-        /// </summary>
-        /// <param name="db"></param>
-        /// <returns></returns>
-        public static ObjectId LayerTableId(Database db)
-        {
-            return db.LayerTableId;
-        }
-
-        /// <summary>
         /// 获得层表
         /// </summary>
         /// <param name="db"></param>
         /// <returns></returns>
-        public static LayerTable GetLayerTable(Database db)
+        public static LayerTable GetLayerTable(this Database db)
         {
             LayerTable layertable;
             using (Transaction trans = db.TransactionManager.StartTransaction())
@@ -387,7 +368,7 @@ namespace AcDotNetTool
         /// <param name="name">图层名</param>
         /// <param name="db">数据库</param>
         /// <returns></returns>
-        public static LayerTableRecord GetLayer(string name, Database db)
+        public static LayerTableRecord GetLayer(this Database db, string name)
         {
             LayerTableRecord layer = new LayerTableRecord();
             using (Transaction trans = db.TransactionManager.StartTransaction())
@@ -412,7 +393,7 @@ namespace AcDotNetTool
         /// </summary>
         /// <param name="db">数据库</param>
         /// <returns></returns>
-        public static LayerTableRecord GetCurrentLayer(Database db)
+        public static LayerTableRecord GetCurrentLayer(this Database db)
         {
             LayerTableRecord layer = new LayerTableRecord();
             using (Transaction tr = db.TransactionManager.StartTransaction())
@@ -507,7 +488,7 @@ namespace AcDotNetTool
         /// </summary>
         /// <param name="LayerName"></param>
         /// <param name="db"></param>
-        public static void RemoveLayer(string layerName, Database db)
+        public static void RemoveLayer(this Database db, string layerName)
         {
             using (Transaction trans = db.TransactionManager.StartTransaction())
             {
@@ -599,7 +580,7 @@ namespace AcDotNetTool
         /// <param name="name">词典记录名</param>
         /// <param name="db">词典数据库</param>
         /// <returns></returns>
-        public static DBObject GetObjFromNod(string name, Database db)
+        public static DBObject GetObjFromNod(this Database db,string name)
         {
             DBObject obj = null;
             using (Transaction tr = db.TransactionManager.StartTransaction())
