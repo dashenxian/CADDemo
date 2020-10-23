@@ -135,10 +135,10 @@ namespace AcDotNetTool
             {
                 direction = 0 - direction;
             }
-            disAbs = disAbs * direction;
+            var dis = disAbs * direction;
             try
             {
-                DBObjectCollection offsetCur = cur.GetOffsetCurves(disAbs);
+                DBObjectCollection offsetCur = cur.GetOffsetCurves(dis);
                 foreach (var i in offsetCur)
                 {
                     Cl.Add((Curve)i);
