@@ -14,13 +14,20 @@ namespace TestCADRegion
         [CommandMethod("Test")]
         public void Test()
         {
-            Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
-            var point1 = new Point3d(0, 0, 0);
-            var point2 = SelectPoint("选择第二点");
-            var ang = point1.GetAngleToXAxis(point2.ToPoint3d());
-            var ang1 = GeometryTools.Angle(point1, point2.ToPoint3d());
-            ed.WriteMessage($"角度1:{BaseTools.AngleToDegree(ang)}");
-            ed.WriteMessage($"角度2:{BaseTools.AngleToDegree(ang1)}");
+            var pl = Select("选择线段") as Curve;
+            if (pl == null)
+            {
+                return;
+            }
+
+            var point = SelectPoint("选择偏移方向");
+            if (point==null)
+            {
+                return;
+                
+            }
+            var offsets = pl.Offset(1,point.ToPoint3d());
+            (offsets[0] as Entity).AddToModelSpace(DataBaseTools.DocumentDatabase());
         }
         [CommandMethod("IsBound")]
         public void IsBound()

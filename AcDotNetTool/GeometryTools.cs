@@ -8,6 +8,9 @@ using Autodesk.AutoCAD.Geometry;
 
 namespace AcDotNetTool
 {
+    /// <summary>
+    /// 几何相关处理
+    /// </summary>
     public static class GeometryTools
     {
 

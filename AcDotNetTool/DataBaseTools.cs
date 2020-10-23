@@ -6,6 +6,9 @@ using Autodesk.AutoCAD.Runtime;
 
 namespace AcDotNetTool
 {
+    /// <summary>
+    /// 数据库相关处理
+    /// </summary>
     public static class DataBaseTools
     {
         #region 获得数据库

@@ -4,6 +4,9 @@ using System.Collections.Generic;
 
 namespace AcDotNetTool
 {
+    /// <summary>
+    /// 填充处理
+    /// </summary>
     public static partial class HatchTools
     {
         /// <summary>

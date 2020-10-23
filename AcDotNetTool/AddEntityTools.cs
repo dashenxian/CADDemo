@@ -4,6 +4,9 @@ using System;
 
 namespace AcDotNetTool
 {
+    /// <summary>
+    /// 添加图形
+    /// </summary>
     public static partial class AddEntityTools
     {
         /// <summary>

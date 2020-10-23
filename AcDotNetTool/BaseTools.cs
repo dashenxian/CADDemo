@@ -4,6 +4,9 @@ using Autodesk.AutoCAD.DatabaseServices;
 
 namespace AcDotNetTool
 {
+    /// <summary>
+    /// 基础处理
+    /// </summary>
     public static partial class BaseTools
     {
         #region 坐标点转换
@@ -60,6 +63,6 @@ namespace AcDotNetTool
             return angle * 180 / Math.PI;
         }
         #endregion
-
+     
     }
 }

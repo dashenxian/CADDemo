@@ -4,6 +4,9 @@ using Autodesk.AutoCAD.Geometry;
 
 namespace AcDotNetTool
 {
+    /// <summary>
+    /// 编辑图形
+    /// </summary>
     public static class EditEntityTools
     {
         /// <summary>
@@ -30,6 +33,17 @@ namespace AcDotNetTool
             Matrix3d mt = Matrix3d.Displacement(targetPt - sourcePt);
             Entity entCopy = ent.GetTransformedCopy(mt);
             return entCopy;
+        }
+        /// <summary>
+        /// 指定基点与旋转角度旋转实体
+        /// </summary>
+        /// <param name="ent">实体对象</param>
+        /// <param name="basePt">基点</param>
+        /// <param name="angle">旋转角度</param>
+        public static void Rotate(this Entity ent, Point2d basePt, double angle)
+        {
+            Matrix3d mt = Matrix3d.Rotation(angle, Vector3d.ZAxis, basePt.ToPoint3d());
+            ent.TransformBy(mt);
         }
         /// <summary>
         /// 指定基点与旋转角度旋转实体
@@ -86,8 +100,6 @@ namespace AcDotNetTool
         /// <returns>偏移后对象集合</returns>
         public static List<Curve> Offset(this Curve cur, double dis)
         {
-            ObjectId ModelSpaseID =
-                SymbolUtilityServices.GetBlockModelSpaceId(HostApplicationServices.WorkingDatabase);
             List<Curve> Cl = new List<Curve>();
             try
             {
@@ -102,6 +114,40 @@ namespace AcDotNetTool
             return Cl;
         }
 
+        /// <summary>
+        /// 偏移对象到指定点
+        /// </summary>
+        /// <param name="cur"></param>
+        /// <param name="OffsetPoint">偏移方向</param>
+        /// <param name="dis">偏移距离绝对值</param>
+        /// <returns></returns>
+        public static List<Curve> Offset(this Curve cur, double disAbs, Point3d OffsetPoint)
+        {
+            List<Curve> Cl = new List<Curve>();
+            var closestPoint = cur.GetClosestPointTo(OffsetPoint, false);
+            //曲线上给定一点的一阶导数(斜率)
+            var d1 = cur.GetFirstDerivative(closestPoint);
+            //最近的点到偏移点的向量
+            var v1 = closestPoint.GetVectorTo(OffsetPoint);
+            //向量积垂直于d1、v1构成的平面，如果向量积的z轴数据为正，则构成坐标系，偏移方向也为正，否则为负
+            var direction = d1.X * v1.Y - d1.Y * v1.X > 0 ? -1 : 1;
+            if (cur is Line)//直线的方向和多段线相反
+            {
+                direction = 0 - direction;
+            }
+            disAbs = disAbs * direction;
+            try
+            {
+                DBObjectCollection offsetCur = cur.GetOffsetCurves(disAbs);
+                foreach (var i in offsetCur)
+                {
+                    Cl.Add((Curve)i);
+                }
+            }
+            catch
+            { }
+            return Cl;
+        }
         /// <summary>
         /// 指定行数、列数、行距、列距矩形阵列实体
         /// </summary>
