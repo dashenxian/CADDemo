@@ -76,11 +76,10 @@
     <Compile Include="EditEntityTools.cs" />
     <Compile Include="GeometryTools.cs" />
     <Compile Include="HatchTools.cs" />
-    <Compile Include="LineJig.cs" />
+    <Compile Include="Jigs\LineJig.cs" />
+    <Compile Include="Jigs\PolyLineJig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Jigs\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

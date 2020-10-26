@@ -1,5 +1,6 @@
 ﻿using System;
 using AcDotNetTool;
+using AcDotNetTool.Jigs;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
@@ -14,7 +15,7 @@ namespace TestCADRegion
         [CommandMethod("Test")]
         public void Test()
         {
-            LineJig.DrawLineContinue();
+            PolyLineJig.DrawPolyLine();
         }
         [CommandMethod("IsBound")]
         public void IsBound()
