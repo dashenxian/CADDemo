@@ -14,13 +14,7 @@ namespace TestCADRegion
         [CommandMethod("Test")]
         public void Test()
         {
-            var ed = DataBaseTools.DocumentEditor();
-            var lineJig = new LineJig();
-           var res= ed.Drag(lineJig);
-           if (res.Status== PromptStatus.OK)
-           {
-               var line = lineJig.Line;
-           }
+            LineJig.DrawLineContinue();
         }
         [CommandMethod("IsBound")]
         public void IsBound()
