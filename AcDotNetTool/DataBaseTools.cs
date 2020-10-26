@@ -1,6 +1,8 @@
-﻿using Autodesk.AutoCAD.ApplicationServices.Core;
+﻿using System;
+using Autodesk.AutoCAD.ApplicationServices.Core;
 using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 
@@ -28,11 +30,15 @@ namespace AcDotNetTool
         /// <returns></returns>
         public static Database DocumentDatabase()
         {
-            return Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Database;
+            return Application.DocumentManager.MdiActiveDocument.Database;
         }
 
         #endregion
 
+        public static Editor DocumentEditor()
+        {
+            return Application.DocumentManager.MdiActiveDocument.Editor;
+        }
 
         #region 获得对象
 
@@ -584,7 +590,7 @@ namespace AcDotNetTool
         /// <param name="name">词典记录名</param>
         /// <param name="db">词典数据库</param>
         /// <returns></returns>
-        public static DBObject GetObjFromNod(this Database db,string name)
+        public static DBObject GetObjFromNod(this Database db, string name)
         {
             DBObject obj = null;
             using (Transaction tr = db.TransactionManager.StartTransaction())

@@ -14,20 +14,13 @@ namespace TestCADRegion
         [CommandMethod("Test")]
         public void Test()
         {
-            var pl = Select("选择线段") as Curve;
-            if (pl == null)
-            {
-                return;
-            }
-
-            var point = SelectPoint("选择偏移方向");
-            if (point==null)
-            {
-                return;
-                
-            }
-            var offsets = pl.Offset(1,point.ToPoint3d());
-            (offsets[0] as Entity).AddToModelSpace(DataBaseTools.DocumentDatabase());
+            var ed = DataBaseTools.DocumentEditor();
+            var lineJig = new LineJig();
+           var res= ed.Drag(lineJig);
+           if (res.Status== PromptStatus.OK)
+           {
+               var line = lineJig.Line;
+           }
         }
         [CommandMethod("IsBound")]
         public void IsBound()
