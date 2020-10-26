@@ -73,7 +73,8 @@ namespace AcDotNetTool
             Database db = obj.Database;
             using (Transaction trans = db.TransactionManager.StartTransaction())
             {
-                obj.Erase();
+                var ent = trans.GetObject(obj.ObjectId, OpenMode.ForWrite) as Entity;
+                ent.Erase();
                 trans.Commit();
             }
         }

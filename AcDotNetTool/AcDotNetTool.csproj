@@ -59,6 +59,7 @@
       <HintPath>..\Lib\CAD\R2014\AdWindows.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="PresentationCore" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
