@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using AcDotNetTool;
 using AcDotNetTool.Jigs;
 using Autodesk.AutoCAD.ApplicationServices;
@@ -15,7 +16,21 @@ namespace TestCADRegion
         [CommandMethod("Test")]
         public void Test()
         {
-            PolyLineJig.DrawPolyLine();
+            var selects = BaseTools.GetSelection(new BaseTools.FilterType[] {
+                BaseTools.FilterType.Curve,
+                BaseTools.FilterType.Lwpolyline,
+                BaseTools.FilterType.Line,
+                BaseTools.FilterType.Circle,
+                BaseTools.FilterType.MText,
+            });
+
+            BaseTools.WriteMessage(selects.Count() + "");
+            //var mtext = BaseTools.Select("选择文本框") as MText;
+            //if (mtext == null)
+            //{
+            //    return;
+            //}
+            //BaseTools.WriteMessage($"text:{mtext.Text}\r\ncontents:{mtext.Contents}");
         }
         [CommandMethod("IsBound")]
         public void IsBound()

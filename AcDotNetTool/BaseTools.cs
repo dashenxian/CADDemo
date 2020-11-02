@@ -1,6 +1,9 @@
 ﻿using Autodesk.AutoCAD.Geometry;
 using System;
+using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
+using System.Collections.Generic;
 
 namespace AcDotNetTool
 {
@@ -63,6 +66,107 @@ namespace AcDotNetTool
             return angle * 180 / Math.PI;
         }
         #endregion
-     
+
+
+        #region 命令行输出
+
+        public static void WriteMessage(string msg)
+        {
+            var ed = Application.DocumentManager.MdiActiveDocument.Editor;
+            ed.WriteMessage(msg);
+        }
+        #endregion
+
+
+        #region 选择实体
+
+        /// <summary>
+        /// 提示用户选择单个实体
+        /// </summary>
+        /// <param name="word">选择提示</param>
+        /// <returns>实体对象</returns>
+        public static Entity Select(string word)
+        {
+            Document doc = Application.DocumentManager.MdiActiveDocument;
+            Database db = doc.Database;
+            Editor ed = doc.Editor;
+            Entity entity = null;
+
+            PromptEntityResult ent = ed.GetEntity(word);
+            if (ent.Status == PromptStatus.OK)
+            {
+                using (Transaction transaction = db.TransactionManager.StartTransaction())
+                {
+                    entity = (Entity)transaction.GetObject(ent.ObjectId, OpenMode.ForWrite, true);
+                    transaction.Commit();
+                }
+            }
+            return entity;
+        }
+        /// <summary>
+        /// 提示用户选择实体
+        /// </summary>
+        /// <param name="tps">类型过滤枚举类</param>
+        /// <returns></returns>
+        public static IEnumerable<Entity> GetSelection(FilterType[] tps)
+        {
+            Document doc = Application.DocumentManager.MdiActiveDocument;
+            Database db = doc.Database;
+            Editor ed = doc.Editor;
+            Entity entity = null;
+            var EntityCollection = new List<Entity>();
+            PromptSelectionOptions selops = new PromptSelectionOptions();
+            // 建立选择的过滤器内容
+            TypedValue[] filList = new TypedValue[tps.Length + 2];
+            filList[0] = new TypedValue((int)DxfCode.Operator, "<or");
+            filList[tps.Length + 1] = new TypedValue((int)DxfCode.Operator, "or>");
+            for (int i = 0; i < tps.Length; i++)
+            {
+                filList[i + 1] = new TypedValue((int)DxfCode.Start, tps[i].ToString());
+            }// 建立过滤器
+            SelectionFilter filter = new SelectionFilter(filList);
+            // 按照过滤器进行选择
+            PromptSelectionResult ents = ed.GetSelection(selops, filter);
+            if (ents.Status == PromptStatus.OK)
+            {
+                using (Transaction transaction = db.TransactionManager.StartTransaction())
+                {
+                    SelectionSet SS = ents.Value;
+                    foreach (ObjectId id in SS.GetObjectIds())
+                    {
+                        entity = (Entity)transaction.GetObject(id, OpenMode.ForWrite, true);
+                        if (entity != null)
+                            EntityCollection.Add(entity);
+                    }
+                    transaction.Commit();
+                }
+            }
+            return EntityCollection;
+        }
+        /// <summary>
+        /// 类型过滤枚举类
+        /// </summary>
+        public enum FilterType
+        {
+            Curve,
+            Dimension,
+            /// <summary>
+            /// 包含Polyline2d（二维多段线）、Polyline3d（三维多段线），不包含pline多段线;
+            /// </summary>
+            Polyline,
+            /// <summary>
+            /// 可用，多段线，用pline绘制的
+            /// </summary>
+            Lwpolyline,
+            BlockRef,
+            Circle,
+            Line,
+            Arc,
+            Text,
+            MText
+        }
+        #endregion
+
+
     }
 }
