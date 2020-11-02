@@ -1,6 +1,9 @@
 ﻿using ZwSoft.ZwCAD.Geometry;
 using System;
+using System.Collections.Generic;
+using ZwSoft.ZwCAD.ApplicationServices;
 using ZwSoft.ZwCAD.DatabaseServices;
+using ZwSoft.ZwCAD.EditorInput;
 
 namespace AcDotNetTool
 {
@@ -41,8 +44,7 @@ namespace AcDotNetTool
         }
 
         #endregion
-
-
+        
         #region 角度与弧度转换
         /// <summary>
         /// 角度转化为弧度
@@ -64,5 +66,41 @@ namespace AcDotNetTool
         }
         #endregion
 
+        #region 命令行输出
+
+        public static void WriteMessage(string msg)
+        {
+            var ed = Application.DocumentManager.MdiActiveDocument.Editor;
+            ed.WriteMessage(msg);
+        }
+        #endregion
+
+
+        #region 选择实体
+
+        /// <summary>
+        /// 提示用户选择单个实体
+        /// </summary>
+        /// <param name="word">选择提示</param>
+        /// <returns>实体对象</returns>
+        public static Entity Select(string word)
+        {
+            Document doc = Application.DocumentManager.MdiActiveDocument;
+            Database db = doc.Database;
+            Editor ed = doc.Editor;
+            Entity entity = null;
+
+            PromptEntityResult ent = ed.GetEntity(word);
+            if (ent.Status == PromptStatus.OK)
+            {
+                using (Transaction transaction = db.TransactionManager.StartTransaction())
+                {
+                    entity = (Entity)transaction.GetObject(ent.ObjectId, OpenMode.ForWrite, true);
+                    transaction.Commit();
+                }
+            }
+            return entity;
+        }
+        #endregion
     }
 }

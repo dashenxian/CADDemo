@@ -15,7 +15,13 @@ namespace TestCADRegion
         [CommandMethod("Test")]
         public void Test()
         {
-            ArcJig.DrawArc();
+            var ent = Select("选择对象") as MText;
+            if (ent == null)
+            {
+                return;
+            }
+            Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
+            ed.WriteMessage($"{ent.Contents}");
         }
         [CommandMethod("IsBound")]
         public void IsBound()

@@ -115,7 +115,7 @@ namespace AcDotNetTool
                 // 设置填充比例
                 hatch.PatternScale = scale;
                 // 设置背景色
-                hatch.BackgroundColor = bkColor;
+                hatch.Color = bkColor;
                 // 设置填充图案颜色
                 hatch.ColorIndex = hatchColorIndex;
                 // 设置填充类型和图案名称
@@ -226,7 +226,7 @@ namespace AcDotNetTool
                 Color color2 = Color.FromColorIndex(ColorMethod.ByColor, colorIndex2);
                 GradientColor gColor1 = new GradientColor(color1, 0);
                 GradientColor gColor2 = new GradientColor(color2, 1);
-                hatch.SetGradientColors(new GradientColor[] { gColor1, gColor2 });
+                //hatch.SetGradientColors(new GradientColor[] { gColor1, gColor2 });
 
                 // 将填充对象加入图形数据库
                 BlockTable bt = (BlockTable)trans.GetObject(db.BlockTableId, OpenMode.ForRead);
