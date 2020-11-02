@@ -1,10 +1,10 @@
 ﻿using System;
-using Autodesk.AutoCAD.ApplicationServices.Core;
-using Autodesk.AutoCAD.Colors;
-using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.EditorInput;
-using Autodesk.AutoCAD.Geometry;
-using Autodesk.AutoCAD.Runtime;
+using ZwSoft.ZwCAD.ApplicationServices;
+using ZwSoft.ZwCAD.Colors;
+using ZwSoft.ZwCAD.DatabaseServices;
+using ZwSoft.ZwCAD.EditorInput;
+using ZwSoft.ZwCAD.Geometry;
+using ZwSoft.ZwCAD.Runtime;
 
 namespace AcDotNetTool
 {
@@ -13,6 +13,28 @@ namespace AcDotNetTool
     /// </summary>
     public static class DataBaseTools
     {
+        #region 事务
+        /// <summary>
+        /// 事务内执行
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="ent"></param>
+        /// <param name="excuteAction"></param>
+        /// <returns></returns>
+        public static T TransactionExcute<T>(this T ent, Action<T> excuteAction) where T : DBObject
+        {
+            var db = ent.Database;
+            var trans = db?.TransactionManager.StartTransaction();
+            var ent1 = trans?.GetObject(ent.ObjectId, OpenMode.ForWrite) as T;
+            ent1 = ent1 ?? ent;
+            excuteAction(ent1);
+            trans?.Commit();
+            trans?.Dispose();
+            return ent;
+        }
+        #endregion
+
+
         #region 获得数据库
 
         /// <summary>
@@ -78,7 +100,29 @@ namespace AcDotNetTool
                 trans.Commit();
             }
         }
-
+        /// <summary>
+        /// 删除单个对象
+        /// </summary>
+        /// <param name="obj">要删除对象</param>
+        public static bool TryRemove(DBObject obj)
+        {
+            Database db = obj.Database;
+            bool result = true;
+            using (Transaction trans = db.TransactionManager.StartTransaction())
+            {
+                try
+                {
+                    var ent = trans.GetObject(obj.ObjectId, OpenMode.ForWrite) as Entity;
+                    ent.Erase();
+                    trans.Commit();
+                }
+                catch (System.Exception)
+                {
+                    result = false;
+                }
+            }
+            return result;
+        }
         /// <summary>
         /// 删除ObjectId集合中的对象
         /// </summary>
@@ -134,7 +178,7 @@ namespace AcDotNetTool
             }
 
             db.WblockCloneObjects(idCollection, IdBtr, map, DuplicateRecordCloning.Replace, false);
-            ndb.SaveAs(fileName, DwgVersion.Current);
+            ndb.SaveAs(fileName, new SecurityParameters());
         }
         #endregion
 

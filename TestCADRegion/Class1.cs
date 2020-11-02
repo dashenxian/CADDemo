@@ -1,11 +1,11 @@
 ﻿using System;
 using AcDotNetTool;
 using AcDotNetTool.Jigs;
-using Autodesk.AutoCAD.ApplicationServices;
-using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.EditorInput;
-using Autodesk.AutoCAD.Geometry;
-using Autodesk.AutoCAD.Runtime;
+using ZwSoft.ZwCAD.ApplicationServices;
+using ZwSoft.ZwCAD.DatabaseServices;
+using ZwSoft.ZwCAD.EditorInput;
+using ZwSoft.ZwCAD.Geometry;
+using ZwSoft.ZwCAD.Runtime;
 
 namespace TestCADRegion
 {
@@ -15,7 +15,7 @@ namespace TestCADRegion
         [CommandMethod("Test")]
         public void Test()
         {
-            PolyLineJig.DrawPolyLine();
+            ArcJig.DrawArc();
         }
         [CommandMethod("IsBound")]
         public void IsBound()
@@ -132,7 +132,7 @@ namespace TestCADRegion
 
         public static Point2d SelectPoint(string word)
         {
-            Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            Document doc = ZwSoft.ZwCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             Database db = doc.Database;
             Editor ed = doc.Editor;
             var ent = ed.GetPoint(word);
@@ -145,7 +145,7 @@ namespace TestCADRegion
         /// <returns>实体对象</returns>
         public static Entity Select(string word)
         {
-            Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            Document doc = ZwSoft.ZwCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             Database db = doc.Database;
             Editor ed = doc.Editor;
             Entity entity = null;

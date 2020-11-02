@@ -1,6 +1,6 @@
-﻿using Autodesk.AutoCAD.Geometry;
+﻿using ZwSoft.ZwCAD.Geometry;
 using System;
-using Autodesk.AutoCAD.DatabaseServices;
+using ZwSoft.ZwCAD.DatabaseServices;
 
 namespace AcDotNetTool
 {
@@ -63,6 +63,6 @@ namespace AcDotNetTool
             return angle * 180 / Math.PI;
         }
         #endregion
-     
+
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
-using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.Geometry;
+using ZwSoft.ZwCAD.DatabaseServices;
+using ZwSoft.ZwCAD.Geometry;
 
 namespace AcDotNetTool
 {
@@ -191,53 +191,53 @@ namespace AcDotNetTool
             }
             return ents;
         }
-        /// <summary>
-        /// 设置动态块属性
-        /// </summary>
-        /// <param name="br">要设置属性的动态块参照</param>
-        /// <param name="Properties">属性数组</param>
-        public static void SetDynamicValue(BlockReference br, Property[] properties)
-        {
-            try
-            {
-                if (br.IsDynamicBlock)
-                {
-                    foreach (DynamicBlockReferenceProperty dbrp in br.DynamicBlockReferencePropertyCollection)
-                    {
-                        for (int i = 0; i < properties.Length; i++)
-                        {
-                            if (dbrp.PropertyName == properties[i].PropertyName)
-                            {
-                                dbrp.Value = properties[i].Value;
-                            }
-                        }
-                    }
-                }
-            }
-            catch
-            { }
-        }
-        /// <summary>
-        /// 动态块属性
-        /// </summary>
-        public class Property
-        {
-            private string propertyname;
-            private double value;
-            public string PropertyName
-            {
-                get { return propertyname; }
-            }
-            public double Value
-            {
-                get { return value; }
-            }
-            public Property(string PropertyName, double Value)
-            {
-                propertyname = PropertyName;
-                value = Value;
-            }
-        }
+        ///// <summary>
+        ///// 设置动态块属性
+        ///// </summary>
+        ///// <param name="br">要设置属性的动态块参照</param>
+        ///// <param name="Properties">属性数组</param>
+        //public static void SetDynamicValue(BlockReference br, Property[] properties)
+        //{
+        //    try
+        //    {
+        //        if (br.IsDynamicBlock)
+        //        {
+        //            foreach (DynamicBlockReferenceProperty dbrp in br.DynamicBlockReferencePropertyCollection)
+        //            {
+        //                for (int i = 0; i < properties.Length; i++)
+        //                {
+        //                    if (dbrp.PropertyName == properties[i].PropertyName)
+        //                    {
+        //                        dbrp.Value = properties[i].Value;
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+        //    catch
+        //    { }
+        //}
+        ///// <summary>
+        ///// 动态块属性
+        ///// </summary>
+        //public class Property
+        //{
+        //    private string propertyname;
+        //    private double value;
+        //    public string PropertyName
+        //    {
+        //        get { return propertyname; }
+        //    }
+        //    public double Value
+        //    {
+        //        get { return value; }
+        //    }
+        //    public Property(string PropertyName, double Value)
+        //    {
+        //        propertyname = PropertyName;
+        //        value = Value;
+        //    }
+        //}
 
         /// <summary>
         /// 改变对象的绘图次序到顶层
@@ -275,7 +275,7 @@ namespace AcDotNetTool
                 BlockTableRecord btr = (BlockTableRecord)trans.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
                 IdBtr = btr.ObjectId;
                 db.WblockCloneObjects(idCollection, IdBtr, Map, DuplicateRecordCloning.Replace, false);
-                TargetDb.SaveAs(fileName, DwgVersion.Current);
+                TargetDb.SaveAs(fileName, new SecurityParameters());
                 trans.Commit();
             }
         }

@@ -1,13 +1,13 @@
-﻿using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.EditorInput;
-using Autodesk.AutoCAD.Geometry;
+﻿using ZwSoft.ZwCAD.DatabaseServices;
+using ZwSoft.ZwCAD.EditorInput;
+using ZwSoft.ZwCAD.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Math;
-using AcAp = Autodesk.AutoCAD.ApplicationServices.Application;
+using AcAp = ZwSoft.ZwCAD.ApplicationServices.Application;
 
 namespace TestCADRegion
 {
@@ -55,7 +55,7 @@ namespace TestCADRegion
 
                 // get the intersection
                 var pts = new Point3dCollection();
-                line1.IntersectWith(line2, Intersect.ExtendBoth, pts, IntPtr.Zero, IntPtr.Zero);
+                line1.IntersectWith(line2, Intersect.ExtendBoth, pts, 0, 0);
                 if (pts.Count != 1)
                 {
                     ed.WriteMessage("\nSelected lines do not intersect.");

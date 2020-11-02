@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.Geometry;
+using ZwSoft.ZwCAD.DatabaseServices;
+using ZwSoft.ZwCAD.Geometry;
 
 namespace AcDotNetTool
 {
@@ -204,7 +204,7 @@ namespace AcDotNetTool
         /// <param name="C2">曲线2</param>
         /// <param name="inter">延伸方式</param>
         /// <returns>交点集合</returns>
-        public static Point3dCollection Intersect(Curve cur1, Curve cur2, Autodesk.AutoCAD.DatabaseServices.Intersect inter)
+        public static Point3dCollection Intersect(Curve cur1, Curve cur2, ZwSoft.ZwCAD.DatabaseServices.Intersect inter)
         {
             Point3dCollection ptc = new Point3dCollection();
             cur1.IntersectWith(cur2, inter, ptc, 0, 0);
