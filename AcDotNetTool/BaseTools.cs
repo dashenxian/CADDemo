@@ -167,6 +167,52 @@ namespace AcDotNetTool
         }
         #endregion
 
+        /// <summary>
+        /// 是否为逆时针
+        /// </summary>
+        /// <param name="Vertices"></param>
+        /// <returns></returns>
+        public static bool IsCCW(List<Point3d> Vertices)
+        {
+            Point3d hip, p, prev, next;
+            int hii, i;
+            int nPts = Vertices.Count;
 
+            if (nPts < 4) return false;
+
+            hip = Vertices[0];
+            hii = 0;
+            for (i = 1; i < nPts; i++)
+            {
+                p = Vertices[i];
+                if (p.Y > hip.Y)
+                {
+                    hip = p;
+                    hii = i;
+                }
+            }
+
+            int iPrev = hii - 1;
+            if (iPrev < 0) iPrev = nPts - 2;
+            int iNext = hii + 1;
+            if (iNext >= nPts) iNext = 1;
+            prev = Vertices[iPrev];
+            next = Vertices[iNext];
+
+            double prev2x = prev.X - hip.X;
+            double prev2y = prev.Y - hip.Y;
+            double next2x = next.X - hip.X;
+            double next2y = next.Y - hip.Y;
+            double disc = next2x * prev2y - next2y * prev2x;
+
+            if (disc == 0.0)
+            {
+                return (prev.X > next.X);
+            }
+            else
+            {
+                return (disc > 0.0);
+            }
+        }
     }
 }

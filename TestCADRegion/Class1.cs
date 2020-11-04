@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using AcDotNetTool;
 using AcDotNetTool.Jigs;
@@ -16,15 +17,13 @@ namespace TestCADRegion
         [CommandMethod("Test")]
         public void Test()
         {
-            var selects = BaseTools.GetSelection(new BaseTools.FilterType[] {
-                BaseTools.FilterType.Curve,
-                BaseTools.FilterType.Lwpolyline,
-                BaseTools.FilterType.Line,
-                BaseTools.FilterType.Circle,
-                BaseTools.FilterType.MText,
-            });
+            Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
+            ViewTableRecord vtr = ed.GetCurrentView();
 
-            BaseTools.WriteMessage(selects.Count() + "");
+            var aa = vtr.ViewDirection;
+            vtr.ViewDirection = new Vector3d(-1, -1, 1);
+            ed.SetCurrentView(vtr);
+            Application.DocumentManager.MdiActiveDocument.SendStringToExecute("zoom e ", false, false, false);
             //var mtext = BaseTools.Select("选择文本框") as MText;
             //if (mtext == null)
             //{
