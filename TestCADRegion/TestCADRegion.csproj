@@ -66,6 +66,9 @@
       <HintPath>..\Lib\CAD\R2014\AdWindows.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -88,6 +91,13 @@
       <Project>{02c11163-bd87-4411-87f2-11f455425dd4}</Project>
       <Name>AcDotNetTool</Name>
     </ProjectReference>
+    <ProjectReference Include="..\CADModel\CADModel.csproj">
+      <Project>{eafca7ef-7a6b-41bf-bfc1-9035378588e8}</Project>
+      <Name>CADModel</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

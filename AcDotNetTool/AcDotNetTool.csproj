@@ -33,31 +33,31 @@
   <ItemGroup>
     <Reference Include="accoremgd">
       <HintPath>..\Lib\CAD\R2014\accoremgd.dll</HintPath>
-      <Private>False</Private>
+      <Private>True</Private>
     </Reference>
     <Reference Include="AcCui">
       <HintPath>..\Lib\CAD\R2014\AcCui.dll</HintPath>
-      <Private>False</Private>
+      <Private>True</Private>
     </Reference>
     <Reference Include="acdbmgd">
       <HintPath>..\Lib\CAD\R2014\acdbmgd.dll</HintPath>
-      <Private>False</Private>
+      <Private>True</Private>
     </Reference>
     <Reference Include="acdbmgdbrep">
       <HintPath>..\Lib\CAD\R2014\acdbmgdbrep.dll</HintPath>
-      <Private>False</Private>
+      <Private>True</Private>
     </Reference>
     <Reference Include="acmgd">
       <HintPath>..\Lib\CAD\R2014\acmgd.dll</HintPath>
-      <Private>False</Private>
+      <Private>True</Private>
     </Reference>
     <Reference Include="AcWindows">
       <HintPath>..\Lib\CAD\R2014\AcWindows.dll</HintPath>
-      <Private>False</Private>
+      <Private>True</Private>
     </Reference>
     <Reference Include="AdWindows">
       <HintPath>..\Lib\CAD\R2014\AdWindows.dll</HintPath>
-      <Private>False</Private>
+      <Private>True</Private>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />

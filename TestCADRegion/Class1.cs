@@ -8,6 +8,10 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
+using CADModel;
+using Point2d = Autodesk.AutoCAD.Geometry.Point2d;
+using Point3d = Autodesk.AutoCAD.Geometry.Point3d;
+using Newtonsoft.Json;
 
 namespace TestCADRegion
 {
@@ -17,13 +21,36 @@ namespace TestCADRegion
         [CommandMethod("Test")]
         public void Test()
         {
-            Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
-            ViewTableRecord vtr = ed.GetCurrentView();
 
-            var aa = vtr.ViewDirection;
-            vtr.ViewDirection = new Vector3d(-1, -1, 1);
-            ed.SetCurrentView(vtr);
-            Application.DocumentManager.MdiActiveDocument.SendStringToExecute("zoom e ", false, false, false);
+            var index = 0;
+            var dic = new Dictionary<string, string>();
+
+            while (index < 5)
+            {
+                var outLine = BaseTools.Select("\r\n选择外部对象:") as Polyline;
+                if (outLine == null)
+                {
+                    index++;
+                    continue;
+                }
+
+                var inLine = BaseTools.Select("\r\n选择内部对象:") as Polyline;
+                if (inLine == null)
+                {
+                    index++;
+                    continue;
+                }
+
+                var outLinejson = GetJson(outLine);
+                var inLinejson = GetJson(inLine);
+                dic.Add(inLinejson, outLinejson);
+            }
+
+            BaseTools.WriteMessage(JsonConvert.SerializeObject(
+                new { str = JsonConvert.SerializeObject(dic) }));
+
+            //var ins = BaseTools.IsInside(outLine, inLine);
+            //BaseTools.WriteMessage($"是否在内部：{ins}");
             //var mtext = BaseTools.Select("选择文本框") as MText;
             //if (mtext == null)
             //{
@@ -31,6 +58,29 @@ namespace TestCADRegion
             //}
             //BaseTools.WriteMessage($"text:{mtext.Text}\r\ncontents:{mtext.Contents}");
         }
+
+        private static string GetJson(Polyline outLine)
+        {
+            var sm = new CADModel.SerializeModel
+            {
+                CadType = CADType.PolyLine
+            };
+            var points = new List<CADModel.Point2d>();
+            for (int i = 0; i < outLine.NumberOfVertices; i++)
+            {
+                var p = outLine.GetPoint2dAt(i);
+                var sp = new CADModel.Point2d()
+                {
+                    X = p.X,
+                    Y = p.Y
+                };
+                points.Add(sp);
+            }
+            sm.Point2ds = points;
+            var json = JsonConvert.SerializeObject(sm);
+            return json;
+        }
+
         [CommandMethod("IsBound")]
         public void IsBound()
         {

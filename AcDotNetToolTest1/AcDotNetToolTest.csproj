@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="nunit" Version="3.12.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.15.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AcDotNetTool\AcDotNetTool.csproj" />
+    <ProjectReference Include="..\CADModel\CADModel.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="accoremgd">
+      <HintPath>..\Lib\CAD\R2014\accoremgd.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="AcCui">
+      <HintPath>..\Lib\CAD\R2014\AcCui.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Acdbmgd">
+      <HintPath>..\Lib\CAD\R2014\acdbmgd.dll</HintPath>
+    </Reference>
+    <Reference Include="acdbmgdbrep">
+      <HintPath>..\Lib\CAD\R2014\acdbmgdbrep.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Acmgd">
+      <HintPath>..\Lib\CAD\R2014\acmgd.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="AcWindows">
+      <HintPath>..\Lib\CAD\R2014\AcWindows.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="AdWindows">
+      <HintPath>..\Lib\CAD\R2014\AdWindows.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

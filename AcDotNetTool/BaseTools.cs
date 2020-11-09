@@ -12,6 +12,11 @@ namespace AcDotNetTool
     /// </summary>
     public static partial class BaseTools
     {
+        /// <summary>
+        /// 容差
+        /// </summary>
+        public static Tolerance Tolerance = new Tolerance(0.000001, 0.000001);
+
         #region 坐标点转换
 
         /// <summary>
@@ -42,9 +47,69 @@ namespace AcDotNetTool
         {
             return new Point2d(point.X, point.Y);
         }
-
+        /// <summary>
+        /// 转换为3d范围，Z坐标为0
+        /// </summary>
+        /// <param name="Extents2d"></param>
+        /// <returns></returns>
+        public static Extents3d ToExtents3d(this Extents2d Extents2d)
+        {
+            return new Extents3d(Extents2d.MinPoint.ToPoint3d(), Extents2d.MaxPoint.ToPoint3d());
+        }
+        /// <summary>
+        /// 转换为2d范围，忽略Z坐标
+        /// </summary>
+        /// <param name="Extents2d"></param>
+        /// <returns></returns>
+        public static Extents2d ToExtents2d(this Extents3d Extents3d)
+        {
+            return new Extents2d(Extents3d.MinPoint.ToPoint2d(), Extents3d.MaxPoint.ToPoint2d());
+        }
+        /// <summary>
+        /// 计算两点的中点
+        /// </summary>
+        /// <param name="p1"></param>
+        /// <param name="p2"></param>
+        /// <returns></returns>
+        public static Point3d GetCenterPoint(Point3d p1, Point3d p2)
+        {
+            return new Point3d(
+                (p1.X + p2.X) / 2,
+                (p1.Y + p2.Y) / 2,
+                (p1.Z + p2.Z) / 2);
+        }
+        /// <summary>
+        /// 计算两点的中点
+        /// </summary>
+        /// <param name="p1"></param>
+        /// <param name="p2"></param>
+        /// <returns></returns>
+        public static Point2d GetCenterPoint(Point2d p1, Point2d p2)
+        {
+            return new Point2d(
+                (p1.X + p2.X) / 2,
+                (p1.Y + p2.Y) / 2);
+        }
         #endregion
 
+        /// <summary>
+        /// 创建面域
+        /// </summary>
+        /// <param name="polyline"></param>
+        /// <returns></returns>
+        public static Region CreateRegion(this Polyline polyline)
+        {
+            if (polyline.Area < 0.0000001)
+            {
+                return null;
+            }
+            var pl = polyline.Clone() as Polyline;
+            pl.Closed = true;
+            var dBObjectCollection = new DBObjectCollection();
+            dBObjectCollection.Add(pl);
+            var reg = Region.CreateFromCurves(dBObjectCollection)[0] as Region;
+            return reg;
+        }
 
         #region 角度与弧度转换
         /// <summary>
@@ -66,6 +131,7 @@ namespace AcDotNetTool
             return angle * 180 / Math.PI;
         }
         #endregion
+
 
 
         #region 命令行输出
@@ -214,5 +280,166 @@ namespace AcDotNetTool
                 return (disc > 0.0);
             }
         }
+
+        #region 是否在范围内
+        /// <summary>
+        /// 判断曲线是否在另一条曲线范围内
+        /// </summary>
+        /// <param name="outLine">范围线</param>
+        /// <param name="inLine">内部曲线</param>
+        /// <returns></returns>
+        public static bool IsInside(Polyline outLine, Polyline inLine)
+        {
+            return IsInside(outLine, inLine, Tolerance.EqualPoint);
+        }
+        /// <summary>
+        /// 判断曲线是否在另一条曲线范围内
+        /// </summary>
+        /// <param name="outLine">范围线</param>
+        /// <param name="inLine">内部曲线</param>
+        /// <param name="tolerance">容差</param>
+        /// <returns></returns>
+        public static bool IsInside(Polyline outLine, Polyline inLine, double tolerance)
+        {
+            if (outLine.Bounds.HasValue && inLine.Bounds.HasValue)
+            {
+                if (!IsInside(outLine.Bounds.Value.ToExtents2d(), inLine.Bounds.Value.ToExtents2d()))
+                {
+                    return false;
+                }
+            }
+            //如果内部线为直线
+            if (inLine.Area == 0)
+            {
+                var lines = new DBObjectCollection();
+                inLine.Explode(lines);
+                foreach (Line line in lines)
+                {
+                    if (!IsInside(outLine, line))
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            //如果内部线不是直线
+            if (inLine.Area > outLine.Area + tolerance)
+            {
+                return false;
+            }
+
+            var inReg = inLine.CreateRegion();
+            var outReg = outLine.CreateRegion();
+
+            var inRegArea = inReg.Area;
+            outReg.BooleanOperation(BooleanOperationType.BoolIntersect, inReg);
+
+            return outReg.Area == inRegArea;
+        }
+        /// <summary>
+        /// 判断点是否在曲线范围内
+        /// </summary>
+        /// <param name="outLine">范围线</param>
+        /// <param name="point">点</param>
+        /// <returns></returns>
+        public static bool IsInside(Polyline outLine, Point2d point)
+        {
+            return IsInside(outLine, point, Tolerance);
+        }
+        /// <summary>
+        /// 判断点是否在曲线范围内
+        /// </summary>
+        /// <param name="outLine">范围线</param>
+        /// <param name="point">点</param>
+        /// <param name="tolerance">容差</param>
+        /// <returns></returns>
+        public static bool IsInside(Polyline outLine, Point2d point, Tolerance tolerance)
+        {
+            var outL = outLine.Clone() as Polyline;
+            if (!outL.Closed)
+            {
+                outL.Closed = true;
+            }
+
+            var closestPoint = outL.GetClosestPointTo(point.ToPoint3d(), false);
+            if (closestPoint.IsEqualTo(point.ToPoint3d(), tolerance))
+            {
+                return true;
+            }
+
+            var ray = new Ray();
+            ray.BasePoint = point.ToPoint3d();
+            ray.SecondPoint = new Point3d(point.X + 1, 0, 0);
+            Point3dCollection points = new Point3dCollection();
+            ray.IntersectWith(outL, Intersect.OnBothOperands, points, new IntPtr(), new IntPtr());
+            if (points.Count % 2 == 1)
+            {
+                return true;
+            }
+
+            return false;
+        }
+        /// <summary>
+        /// 判断边界是否在范围内
+        /// </summary>
+        /// <param name="outExtent">外部范围</param>
+        /// <param name="inExtent">内部范围</param>
+        /// <returns></returns>
+        public static bool IsInside(Extents2d outExtent, Extents2d inExtent)
+        {
+            return IsInside(outExtent, inExtent, Tolerance.EqualPoint);
+        }
+        /// <summary>
+        /// 判断边界是否在范围内
+        /// </summary>
+        /// <param name="outExtent">外部范围</param>
+        /// <param name="inExtent">内部范围</param>
+        /// <param name="tolerance">容差</param>
+        /// <returns></returns>
+        public static bool IsInside(Extents2d outExtent, Extents2d inExtent, double tolerance)
+        {
+            if (outExtent.MaxPoint.X + tolerance < inExtent.MaxPoint.X
+                || outExtent.MaxPoint.Y + tolerance < inExtent.MaxPoint.Y
+                || outExtent.MinPoint.X - tolerance > inExtent.MinPoint.X
+                || outExtent.MinPoint.Y - tolerance > inExtent.MinPoint.Y
+            )
+            {
+                return false;
+            }
+
+            return true;
+        }
+        /// <summary>
+        /// 判断直线是否在范围内
+        /// </summary>
+        /// <param name="outLine">外部范围</param>
+        /// <param name="inLine">直线</param>
+        /// <returns></returns>
+        public static bool IsInside(Polyline outLine, Line inLine)
+        {
+            //直线的端点、交点、交点的中点都在内部，则直线在内部
+            var points = new Point3dCollection();
+            inLine.IntersectWith(outLine, Intersect.OnBothOperands, points, new IntPtr(), new IntPtr());
+            var list = new List<Point2d>();
+            list.Add(inLine.StartPoint.ToPoint2d());
+            foreach (Point3d point in points)
+            {
+                list.Add(point.ToPoint2d());
+            }
+            list.Add(inLine.EndPoint.ToPoint2d());
+
+            for (int i = 0; i < list.Count - 1; i++)
+            {
+                if (!IsInside(outLine, list[i])
+                    || !IsInside(outLine, GetCenterPoint(list[i], list[i + 1]))
+                    || !IsInside(outLine, list[i + 1]))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        #endregion
     }
 }
