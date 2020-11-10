@@ -8,6 +8,9 @@ using ZwSoft.ZwCAD.DatabaseServices;
 using ZwSoft.ZwCAD.EditorInput;
 using ZwSoft.ZwCAD.Geometry;
 using ZwSoft.ZwCAD.Runtime;
+using CADModel;
+using Point2d = ZwSoft.ZwCAD.Geometry.Point2d;
+using Point3d = ZwSoft.ZwCAD.Geometry.Point3d;
 
 namespace TestCADRegion
 {
@@ -17,14 +20,17 @@ namespace TestCADRegion
         [CommandMethod("Test")]
         public void Test()
         {
-            var ent = Select("选择对象") as MText;
-            if (ent == null)
-            {
-                return;
-            }
-            Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
-            ed.WriteMessage($"{ent.Contents}");
+
+            //var ins = BaseTools.IsInside(outLine, inLine);
+            //BaseTools.WriteMessage($"是否在内部：{ins}");
+            //var mtext = BaseTools.Select("选择文本框") as MText;
+            //if (mtext == null)
+            //{
+            //    return;
+            //}
+            //BaseTools.WriteMessage($"text:{mtext.Text}\r\ncontents:{mtext.Contents}");
         }
+        
         [CommandMethod("IsBound")]
         public void IsBound()
         {

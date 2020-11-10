@@ -59,6 +59,13 @@
       <Project>{02c11163-bd87-4411-87f2-11f455425dd4}</Project>
       <Name>AcDotNetTool</Name>
     </ProjectReference>
+    <ProjectReference Include="..\CADModel\CADModel.csproj">
+      <Project>{eafca7ef-7a6b-41bf-bfc1-9035378588e8}</Project>
+      <Name>CADModel</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

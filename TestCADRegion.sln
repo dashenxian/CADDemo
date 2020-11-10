@@ -7,6 +7,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestCADRegion", "TestCADReg
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AcDotNetTool", "AcDotNetTool\AcDotNetTool.csproj", "{02C11163-BD87-4411-87F2-11F455425DD4}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CADModel", "CADModel\CADModel.csproj", "{EAFCA7EF-7A6B-41BF-BFC1-9035378588E8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{3091EB3A-78EC-4E81-89C5-7A15857DF12D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{51CF1E81-4DF8-4E3C-BD7B-03161635F4E1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,9 +27,18 @@ Global
 		{02C11163-BD87-4411-87F2-11F455425DD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{02C11163-BD87-4411-87F2-11F455425DD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{02C11163-BD87-4411-87F2-11F455425DD4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EAFCA7EF-7A6B-41BF-BFC1-9035378588E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EAFCA7EF-7A6B-41BF-BFC1-9035378588E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EAFCA7EF-7A6B-41BF-BFC1-9035378588E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EAFCA7EF-7A6B-41BF-BFC1-9035378588E8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1F72436F-FE67-4170-9BB2-2EDCEABB44C2} = {51CF1E81-4DF8-4E3C-BD7B-03161635F4E1}
+		{02C11163-BD87-4411-87F2-11F455425DD4} = {51CF1E81-4DF8-4E3C-BD7B-03161635F4E1}
+		{EAFCA7EF-7A6B-41BF-BFC1-9035378588E8} = {51CF1E81-4DF8-4E3C-BD7B-03161635F4E1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {834430D2-F29E-4B92-BCCB-858BE77442A9}
