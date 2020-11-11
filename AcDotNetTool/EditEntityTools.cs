@@ -275,7 +275,7 @@ namespace AcDotNetTool
                 BlockTableRecord btr = (BlockTableRecord)trans.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
                 IdBtr = btr.ObjectId;
                 db.WblockCloneObjects(idCollection, IdBtr, Map, DuplicateRecordCloning.Replace, false);
-                TargetDb.SaveAs(fileName, new SecurityParameters());
+                TargetDb.SaveAs(fileName, DwgVersion.Current);
                 trans.Commit();
             }
         }

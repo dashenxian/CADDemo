@@ -178,7 +178,7 @@ namespace AcDotNetTool
             }
 
             db.WblockCloneObjects(idCollection, IdBtr, map, DuplicateRecordCloning.Replace, false);
-            ndb.SaveAs(fileName, new SecurityParameters());
+            ndb.SaveAs(fileName, DwgVersion.Current);
         }
         #endregion
 

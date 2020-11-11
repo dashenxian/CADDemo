@@ -20,17 +20,47 @@ namespace TestCADRegion
         [CommandMethod("Test")]
         public void Test()
         {
-
-            //var ins = BaseTools.IsInside(outLine, inLine);
-            //BaseTools.WriteMessage($"是否在内部：{ins}");
-            //var mtext = BaseTools.Select("选择文本框") as MText;
-            //if (mtext == null)
-            //{
-            //    return;
-            //}
-            //BaseTools.WriteMessage($"text:{mtext.Text}\r\ncontents:{mtext.Contents}");
+            MoveToTopTest();
+            MoveToTopTest();
+            MoveToTopTest();
         }
-        
+
+        private static void MoveToTopTest()
+        {
+            Document acDoc = Application.DocumentManager.MdiActiveDocument;
+            using (Transaction acTran = acDoc.TransactionManager.StartTransaction())
+            {
+                BlockTable acBlkTbl = (BlockTable)acTran.GetObject(acDoc.Database.BlockTableId, OpenMode.ForRead);
+                BlockTableRecord acBlkTblRe =
+                    (BlockTableRecord)acTran.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+                Polyline pl = new Polyline();
+                pl.AddVertexAt(0, new Point2d(0, 0), 0, 0, 0);
+                pl.AddVertexAt(1, new Point2d(10, 0), 0, 0, 0);
+                acBlkTblRe.AppendEntity(pl);
+                acTran.AddNewlyCreatedDBObject(pl, true);
+
+                ObjectIdCollection oc = new ObjectIdCollection();
+                oc.Add(pl.ObjectId);
+                DrawOrderTable acDot = (DrawOrderTable)acTran.GetObject(acBlkTblRe.DrawOrderTableId, OpenMode.ForWrite); 
+                var ed = Application.DocumentManager.MdiActiveDocument.Editor;
+                try
+                {
+                    acDot.MoveToTop(oc); 
+                    ed.WriteMessage("\n执行成功");
+                }
+                catch (ZwSoft.ZwCAD.Runtime.Exception e)
+                {
+                    ed.WriteMessage(e.Message);
+                }
+                acTran.Commit();
+                oc.Dispose();
+                acDot.Dispose();
+                acBlkTblRe.Dispose();
+                acBlkTbl.Dispose();
+                acDoc.Dispose();
+            }
+        }
+
         [CommandMethod("IsBound")]
         public void IsBound()
         {
