@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using AcDotNetTool;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
@@ -16,7 +17,7 @@ namespace TestCADRegion
         public void GetDist()
         {
             Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
-            var pl = Class1.Select("选择曲线") as Polyline;
+            var pl = BaseTools.Select("选择曲线") as Polyline;
             if (pl == null)
             {
                 return;

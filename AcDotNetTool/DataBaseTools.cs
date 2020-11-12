@@ -261,7 +261,15 @@ namespace AcDotNetTool
         {
             return SymbolUtilityServices.GetBlockModelSpaceId(db);
         }
-
+        /// <summary>
+        /// 将一个图形对象加入到指定的Database的模型空间
+        /// </summary>
+        /// <param name="ent">实体对象</param>
+        /// <returns></returns>
+        public static ObjectId AddToModelSpace(this Entity ent)
+        {
+            return AddToModelSpace(ent, DocumentDatabase());
+        }
         /// <summary>
         /// 将一个图形对象加入到指定的Database的模型空间
         /// </summary>
