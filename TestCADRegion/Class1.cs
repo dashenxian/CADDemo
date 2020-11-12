@@ -20,45 +20,56 @@ namespace TestCADRegion
         [CommandMethod("Test")]
         public void Test()
         {
-            MoveToTopTest();
-            MoveToTopTest();
-            MoveToTopTest();
+            LayoutTest();
         }
 
-        private static void MoveToTopTest()
+        private static void LayoutTest()
         {
-            Document acDoc = Application.DocumentManager.MdiActiveDocument;
-            using (Transaction acTran = acDoc.TransactionManager.StartTransaction())
-            {
-                BlockTable acBlkTbl = (BlockTable)acTran.GetObject(acDoc.Database.BlockTableId, OpenMode.ForRead);
-                BlockTableRecord acBlkTblRe =
-                    (BlockTableRecord)acTran.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-                Polyline pl = new Polyline();
-                pl.AddVertexAt(0, new Point2d(0, 0), 0, 0, 0);
-                pl.AddVertexAt(1, new Point2d(10, 0), 0, 0, 0);
-                acBlkTblRe.AppendEntity(pl);
-                acTran.AddNewlyCreatedDBObject(pl, true);
+            string layoutName = "分层分户图";
+            LayoutManager acLayoutMgr = LayoutManager.Current;
+            ObjectId tempLayoutId = acLayoutMgr.GetLayoutId("分层图模板");
+            Document acDoc = ZwSoft.ZwCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
 
-                ObjectIdCollection oc = new ObjectIdCollection();
-                oc.Add(pl.ObjectId);
-                DrawOrderTable acDot = (DrawOrderTable)acTran.GetObject(acBlkTblRe.DrawOrderTableId, OpenMode.ForWrite); 
-                var ed = Application.DocumentManager.MdiActiveDocument.Editor;
-                try
+            Layout tLayout = null;
+            Layout layout = null;
+
+            DocumentLock acLock = acDoc.LockDocument();
+            //更新布局内容
+            using (Transaction acTrans = acDoc.TransactionManager.StartTransaction())
+            {
+                tLayout = acTrans.GetObject(tempLayoutId, OpenMode.ForWrite) as Layout;
+                ObjectId layOutId = acLayoutMgr.GetLayoutId(layoutName);
+                if (layOutId != new ObjectId())
                 {
-                    acDot.MoveToTop(oc); 
-                    ed.WriteMessage("\n执行成功");
+                    acLayoutMgr.CurrentLayout = layoutName;
+
+                    ObjectId acLayoutId = acLayoutMgr.GetLayoutId(layoutName);
+                    //目标布局
+                    layout = acTrans.GetObject(acLayoutId, OpenMode.ForWrite) as Layout;
+                    BlockTableRecord acBlkTblRe0 = acTrans.GetObject(layout.BlockTableRecordId, OpenMode.ForWrite) as BlockTableRecord;
+                    foreach (ObjectId entOid in acBlkTblRe0)
+                    {
+                        Entity ent = acTrans.GetObject(entOid, OpenMode.ForWrite) as Entity;
+                        if (ent != null)
+                            ent.Erase();
+
+                        ent.Dispose();
+                    }
+                    acBlkTblRe0.Dispose();
                 }
-                catch (ZwSoft.ZwCAD.Runtime.Exception e)
+                else
                 {
-                    ed.WriteMessage(e.Message);
+                    acLayoutMgr.CopyLayout(tLayout.LayoutName, layoutName);
+                    acLayoutMgr.CurrentLayout = layoutName;
+                    ObjectId acLayoutId = acLayoutMgr.GetLayoutId(layoutName);
+                    layout = acTrans.GetObject(acLayoutId, OpenMode.ForWrite) as Layout;
                 }
-                acTran.Commit();
-                oc.Dispose();
-                acDot.Dispose();
-                acBlkTblRe.Dispose();
-                acBlkTbl.Dispose();
-                acDoc.Dispose();
+             
+                acTrans.Commit();
             }
+            tLayout.Dispose();
+            layout.Dispose();
+            acLock.Dispose();
         }
 
         [CommandMethod("IsBound")]
