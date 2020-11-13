@@ -269,16 +269,9 @@ namespace AcDotNetTool
         /// <returns>克隆后的数据库</returns>
         public static Database WBClone(ObjectIdCollection idCollection)
         {
+            //获取新数据库的块表id
             Database TargetDb = new Database(true, true);
-            var idsGroup = idCollection.ToList().GroupBy(i => i.Database).Select(i =>
-                new
-                {
-                    i.Key,
-                    Value=i.ToList(),
-                }).ToList();
-
             ObjectId objectId;
-            IdMapping Map = new IdMapping();
             using (Transaction trans = TargetDb.TransactionManager.StartTransaction())
             {
                 BlockTable bt = (BlockTable)trans.GetObject(TargetDb.BlockTableId, OpenMode.ForRead);
@@ -286,15 +279,25 @@ namespace AcDotNetTool
                 objectId = btr.ObjectId;
                 trans.Commit();
             }
+            //拷贝对象
+            var idsGroup = idCollection.ToList()
+                .GroupBy(i => i.Database)
+                .Select(i =>
+                    new
+                    {
+                        i.Key,
+                        Value = i.ToList(),
+                    }).ToList();
+            IdMapping Map = new IdMapping();
             foreach (var idg in idsGroup)
             {
                 Database db = idg.Key;
                 var idc = idg.Value.ToObjectIdCollection();
                 db.WblockCloneObjects(idc, objectId, Map, DuplicateRecordCloning.Replace, false);
             }
+
             return TargetDb;
         }
-
         /// <summary>
         /// 写块克隆对象
         /// </summary>
