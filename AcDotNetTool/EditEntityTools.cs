@@ -293,7 +293,7 @@ namespace AcDotNetTool
                 Database db = idg.Key;
                 var idc = idg.Value.ToObjectIdCollection();
                 IdMapping Map = new IdMapping();
-                db.WblockCloneObjects(idc, objectId, Map, DuplicateRecordCloning.MangleName, false);
+                db.WblockCloneObjects(idc, objectId, Map, DuplicateRecordCloning.Replace, false);
             }
 
             return TargetDb;

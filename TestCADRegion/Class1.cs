@@ -11,7 +11,8 @@ namespace TestCADRegion
         [CommandMethod("Test")]
         public void Test()
         {
-            var ent1s = BaseTools.GetSelection();
+            var db1 = DataBaseTools.ReadFile($@"C:\Users\Administrator\Desktop\房产分层分户图(横).dwg");
+            var ent1s = DataBaseTools.GetAllEntitiesInModel(db1);
 
             var db = DataBaseTools.ReadFile($@"C:\Users\Administrator\Desktop\房产分层分户图.dwg");
             var ent2s = DataBaseTools.GetAllEntitiesInModel(db);
