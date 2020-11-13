@@ -288,12 +288,12 @@ namespace AcDotNetTool
                         i.Key,
                         Value = i.ToList(),
                     }).ToList();
-            IdMapping Map = new IdMapping();
             foreach (var idg in idsGroup)
             {
                 Database db = idg.Key;
                 var idc = idg.Value.ToObjectIdCollection();
-                db.WblockCloneObjects(idc, objectId, Map, DuplicateRecordCloning.Replace, false);
+                IdMapping Map = new IdMapping();
+                db.WblockCloneObjects(idc, objectId, Map, DuplicateRecordCloning.MangleName, false);
             }
 
             return TargetDb;
