@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 
@@ -269,16 +270,28 @@ namespace AcDotNetTool
         public static Database WBClone(ObjectIdCollection idCollection)
         {
             Database TargetDb = new Database(true, true);
-            Database db = idCollection[0].Database;
+            var idsGroup = idCollection.ToList().GroupBy(i => i.Database).Select(i =>
+                new
+                {
+                    i.Key,
+                    Value=i.ToList(),
+                }).ToList();
+
+            ObjectId objectId;
             IdMapping Map = new IdMapping();
             using (Transaction trans = TargetDb.TransactionManager.StartTransaction())
             {
                 BlockTable bt = (BlockTable)trans.GetObject(TargetDb.BlockTableId, OpenMode.ForRead);
                 BlockTableRecord btr = (BlockTableRecord)trans.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
-                db.WblockCloneObjects(idCollection, btr.ObjectId, Map, DuplicateRecordCloning.Replace, false);
+                objectId = btr.ObjectId;
                 trans.Commit();
             }
-
+            foreach (var idg in idsGroup)
+            {
+                Database db = idg.Key;
+                var idc = idg.Value.ToObjectIdCollection();
+                db.WblockCloneObjects(idc, objectId, Map, DuplicateRecordCloning.Replace, false);
+            }
             return TargetDb;
         }
 

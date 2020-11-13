@@ -93,6 +93,37 @@ namespace AcDotNetTool
         }
         #endregion
 
+        #region ObjectIdCollection转换
+        /// <summary>
+        /// 转换为List
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
+        public static List<ObjectId> ToList(this ObjectIdCollection ids)
+        {
+            var list = new List<ObjectId>();
+            foreach (ObjectId id in ids)
+            {
+                list.Add(id);
+            }
+            return list;
+        }
+        /// <summary>
+        /// 转换为ObjectIdCollection对象
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
+        public static ObjectIdCollection ToObjectIdCollection(this IEnumerable<ObjectId> ids)
+        {
+            var list = new ObjectIdCollection();
+            foreach (ObjectId id in ids)
+            {
+                list.Add(id);
+            }
+            return list;
+        }
+        #endregion
+
         /// <summary>
         /// 创建面域
         /// </summary>
