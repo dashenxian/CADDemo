@@ -62,6 +62,7 @@
     <Compile Include="AddEntityTools.cs" />
     <Compile Include="BaseTools.cs" />
     <Compile Include="DataBaseTools.cs" />
+    <Compile Include="DxfTools.cs" />
     <Compile Include="EditEntityTools.cs" />
     <Compile Include="Extensions\PolylineExtension.cs" />
     <Compile Include="GeometryTools.cs" />

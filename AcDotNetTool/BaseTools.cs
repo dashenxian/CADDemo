@@ -1,6 +1,7 @@
 ﻿using ZwSoft.ZwCAD.Geometry;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ZwSoft.ZwCAD.ApplicationServices;
 using ZwSoft.ZwCAD.DatabaseServices;
 using ZwSoft.ZwCAD.EditorInput;
@@ -94,6 +95,37 @@ namespace AcDotNetTool
         }
         #endregion
 
+        #region ObjectIdCollection转换
+        /// <summary>
+        /// 转换为List
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
+        public static List<ObjectId> ToList(this ObjectIdCollection ids)
+        {
+            var list = new List<ObjectId>();
+            foreach (ObjectId id in ids)
+            {
+                list.Add(id);
+            }
+            return list;
+        }
+        /// <summary>
+        /// 转换为ObjectIdCollection对象
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
+        public static ObjectIdCollection ToObjectIdCollection(this IEnumerable<ObjectId> ids)
+        {
+            var list = new ObjectIdCollection();
+            foreach (ObjectId id in ids)
+            {
+                list.Add(id);
+            }
+            return list;
+        }
+        #endregion
+
         /// <summary>
         /// 创建面域
         /// </summary>
@@ -147,6 +179,19 @@ namespace AcDotNetTool
 
 
         #region 选择实体
+        /// <summary>
+        /// 选择点
+        /// </summary>
+        /// <param name="word"></param>
+        /// <returns></returns>
+        public static Point2d SelectPoint(string word)
+        {
+            Document doc = Application.DocumentManager.MdiActiveDocument;
+            Database db = doc.Database;
+            Editor ed = doc.Editor;
+            var ent = ed.GetPoint(word);
+            return new Point2d(ent.Value.X, ent.Value.Y);
+        }
 
         /// <summary>
         /// 提示用户选择单个实体
@@ -171,6 +216,16 @@ namespace AcDotNetTool
             }
             return entity;
         }
+
+        /// <summary>
+        /// 提示用户选择实体
+        /// </summary>
+        /// <param name="tps">类型过滤枚举类</param>
+        /// <returns></returns>
+        public static IEnumerable<Entity> GetSelection()
+        {
+            return GetSelection(null);
+        }
         /// <summary>
         /// 提示用户选择实体
         /// </summary>
@@ -181,20 +236,27 @@ namespace AcDotNetTool
             Document doc = Application.DocumentManager.MdiActiveDocument;
             Database db = doc.Database;
             Editor ed = doc.Editor;
-            Entity entity = null;
             var EntityCollection = new List<Entity>();
-            PromptSelectionOptions selops = new PromptSelectionOptions();
-            // 建立选择的过滤器内容
-            TypedValue[] filList = new TypedValue[tps.Length + 2];
-            filList[0] = new TypedValue((int)DxfCode.Operator, "<or");
-            filList[tps.Length + 1] = new TypedValue((int)DxfCode.Operator, "or>");
-            for (int i = 0; i < tps.Length; i++)
+
+            PromptSelectionResult ents;
+            if (tps == null || !tps.Any())
             {
-                filList[i + 1] = new TypedValue((int)DxfCode.Start, tps[i].ToString());
-            }// 建立过滤器
-            SelectionFilter filter = new SelectionFilter(filList);
-            // 按照过滤器进行选择
-            PromptSelectionResult ents = ed.GetSelection(selops, filter);
+                ents = ed.GetSelection();
+            }
+            else// 按照过滤器进行选择
+            {
+                // 建立选择的过滤器内容
+                TypedValue[] filList = new TypedValue[tps.Length + 2];
+                filList[0] = new TypedValue((int)DxfCode.Operator, "<or");
+                filList[tps.Length + 1] = new TypedValue((int)DxfCode.Operator, "or>");
+                for (int i = 0; i < tps.Length; i++)
+                {
+                    filList[i + 1] = new TypedValue((int)DxfCode.Start, tps[i].ToString());
+                }// 建立过滤器
+                SelectionFilter filter = new SelectionFilter(filList);
+                ents = ed.GetSelection(filter);
+            }
+
             if (ents.Status == PromptStatus.OK)
             {
                 using (Transaction transaction = db.TransactionManager.StartTransaction())
@@ -202,7 +264,7 @@ namespace AcDotNetTool
                     SelectionSet SS = ents.Value;
                     foreach (ObjectId id in SS.GetObjectIds())
                     {
-                        entity = (Entity)transaction.GetObject(id, OpenMode.ForWrite, true);
+                        var entity = (Entity)transaction.GetObject(id, OpenMode.ForWrite, true);
                         if (entity != null)
                             EntityCollection.Add(entity);
                     }
@@ -211,6 +273,7 @@ namespace AcDotNetTool
             }
             return EntityCollection;
         }
+
         /// <summary>
         /// 类型过滤枚举类
         /// </summary>

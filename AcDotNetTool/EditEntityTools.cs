@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using ZwSoft.ZwCAD.DatabaseServices;
 using ZwSoft.ZwCAD.Geometry;
+using System.Linq;
 
 namespace AcDotNetTool
 {
@@ -259,6 +260,44 @@ namespace AcDotNetTool
                 tr.Commit();
             }
         }
+
+
+        /// <summary>
+        /// 写块克隆对象
+        /// </summary>
+        /// <param name="idCollection">对象ObjectId集合</param>
+        /// <returns>克隆后的数据库</returns>
+        public static Database WBClone(ObjectIdCollection idCollection)
+        {
+            //获取新数据库的块表id
+            Database TargetDb = new Database(true, true);
+            ObjectId objectId;
+            using (Transaction trans = TargetDb.TransactionManager.StartTransaction())
+            {
+                BlockTable bt = (BlockTable)trans.GetObject(TargetDb.BlockTableId, OpenMode.ForRead);
+                BlockTableRecord btr = (BlockTableRecord)trans.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+                objectId = btr.ObjectId;
+                trans.Commit();
+            }
+            //拷贝对象
+            var idsGroup = idCollection.ToList()
+                .GroupBy(i => i.Database)
+                .Select(i =>
+                    new
+                    {
+                        i.Key,
+                        Value = i.ToList(),
+                    }).ToList();
+            IdMapping Map = new IdMapping();
+            foreach (var idg in idsGroup)
+            {
+                Database db = idg.Key;
+                var idc = idg.Value.ToObjectIdCollection();
+                db.WblockCloneObjects(idc, objectId, Map, DuplicateRecordCloning.Replace, false);
+            }
+
+            return TargetDb;
+        }
         /// <summary>
         /// 写块克隆对象
         /// </summary>
@@ -266,18 +305,8 @@ namespace AcDotNetTool
         /// <param name="FileName">目标文件名</param>
         public static void WBClone(ObjectIdCollection idCollection, string fileName)
         {
-            Database TargetDb = new Database(true, true);
-            ObjectId IdBtr = new ObjectId();
-            Database db = idCollection[0].Database;
-            IdMapping Map = new IdMapping(); using (Transaction trans = TargetDb.TransactionManager.StartTransaction())
-            {
-                BlockTable bt = (BlockTable)trans.GetObject(TargetDb.BlockTableId, OpenMode.ForRead);
-                BlockTableRecord btr = (BlockTableRecord)trans.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
-                IdBtr = btr.ObjectId;
-                db.WblockCloneObjects(idCollection, IdBtr, Map, DuplicateRecordCloning.Replace, false);
-                TargetDb.SaveAs(fileName, DwgVersion.Current);
-                trans.Commit();
-            }
+            var TargetDb = WBClone(idCollection);
+            TargetDb.SaveAs(fileName, DwgVersion.Current);
         }
     }
 }

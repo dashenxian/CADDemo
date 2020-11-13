@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using ZwSoft.ZwCAD.ApplicationServices;
 using ZwSoft.ZwCAD.Colors;
 using ZwSoft.ZwCAD.DatabaseServices;
@@ -305,7 +306,15 @@ namespace AcDotNetTool
         {
             return SymbolUtilityServices.GetBlockModelSpaceId(db);
         }
-
+        /// <summary>
+        /// 将一个图形对象加入到指定的Database的模型空间
+        /// </summary>
+        /// <param name="ent">实体对象</param>
+        /// <returns></returns>
+        public static ObjectId AddToModelSpace(this Entity ent)
+        {
+            return AddToModelSpace(ent, DocumentDatabase());
+        }
         /// <summary>
         /// 将一个图形对象加入到指定的Database的模型空间
         /// </summary>
@@ -694,6 +703,46 @@ namespace AcDotNetTool
             }
 
             return obj;
+        }
+        #endregion
+
+        #region 读取文件
+        /// <summary>
+        /// 读取文件
+        /// </summary>
+        /// <param name="fileName">文件全路径</param>
+        /// <returns></returns>
+        public static Database ReadFile(string fileName)
+        {
+            var database = new Database(false, false);
+            database.ReadDwgFile(fileName, FileOpenMode.OpenForReadAndAllShare, true, null);
+            return database;
+        }
+        /// <summary>
+        /// 获取模型空间中的所有对象
+        /// </summary>
+        /// <param name="db">数据库</param>
+        /// <returns></returns>
+        public static IEnumerable<Entity> GetAllEntitiesInModel(Database db)
+        {
+            var list = new List<Entity>();
+            using (Transaction trans = db.TransactionManager.StartTransaction())
+            {
+                BlockTable bt = (BlockTable)trans.GetObject(db.BlockTableId, OpenMode.ForRead);
+                BlockTableRecord btr =
+                    (BlockTableRecord)trans.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+
+                foreach (ObjectId objId in btr)
+                {
+                    var ent = trans.GetObject(objId, OpenMode.ForRead) as Entity;
+                    if (ent != null)
+                    {
+                        list.Add(ent);
+                    }
+                }
+            }
+
+            return list;
         }
         #endregion
     }

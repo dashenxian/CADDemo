@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using AcDotNetTool;
 using ZwSoft.ZwCAD.ApplicationServices;
 using ZwSoft.ZwCAD.DatabaseServices;
 using ZwSoft.ZwCAD.EditorInput;
@@ -16,7 +12,7 @@ namespace TestCADRegion
         public void GetDist()
         {
             Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
-            var pl = Class1.Select("选择曲线") as Polyline;
+            var pl = BaseTools.Select("选择曲线") as Polyline;
             if (pl == null)
             {
                 return;
