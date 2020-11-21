@@ -675,6 +675,19 @@ namespace AcDotNetTool
             return database;
         }
         /// <summary>
+        /// 读取文件
+        /// </summary>
+        /// <param name="fileName">文件全路径</param>
+        /// <returns></returns>
+        public static Database ReadDxfFile(string fileName)
+        {
+            var database = new Database(false, false);
+            database.DxfIn(fileName,"dxflog.txt");
+            return database;
+        }
+
+
+        /// <summary>
         /// 获取模型空间中的所有对象
         /// </summary>
         /// <param name="db">数据库</param>
