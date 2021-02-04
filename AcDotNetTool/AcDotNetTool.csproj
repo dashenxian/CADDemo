@@ -18,7 +18,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;AutoCAD</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -30,35 +30,68 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="accoremgd">
+  <ItemGroup Condition="$(DefineConstants.Contains(AutoCAD))">
+    <Reference Include="accoremgd, Version=19.1.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Lib\CAD\R2014\accoremgd.dll</HintPath>
-      <Private>True</Private>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="AcCui">
+    <Reference Include="AcCui, Version=19.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Lib\CAD\R2014\AcCui.dll</HintPath>
-      <Private>True</Private>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="acdbmgd">
+    <Reference Include="acdbmgd, Version=19.1.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Lib\CAD\R2014\acdbmgd.dll</HintPath>
-      <Private>True</Private>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="acdbmgdbrep">
+    <Reference Include="acdbmgdbrep, Version=19.1.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Lib\CAD\R2014\acdbmgdbrep.dll</HintPath>
-      <Private>True</Private>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="acmgd">
+    <Reference Include="acmgd, Version=19.1.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Lib\CAD\R2014\acmgd.dll</HintPath>
-      <Private>True</Private>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="AcWindows">
+    <Reference Include="AcWindows, Version=19.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Lib\CAD\R2014\AcWindows.dll</HintPath>
-      <Private>True</Private>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="AdWindows">
+    <Reference Include="AdWindows, Version=4.0.24.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Lib\CAD\R2014\AdWindows.dll</HintPath>
-      <Private>True</Private>
+      <Private>False</Private>
     </Reference>
+  </ItemGroup>
+  <ItemGroup Condition="$(DefineConstants.Contains(ZWCAD))">
+    <Reference Include="ZcWindows">
+      <HintPath>..\Lib\ZWCAD\R2021\ZcWindows.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="ZdWindows">
+      <HintPath>..\Lib\ZWCAD\R2021\ZdWindows.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="ZwDatabaseMgd, Version=1.1.1.8, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Lib\ZWCAD\R2021\ZwDatabaseMgd.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="ZwDatabaseMgdBrep">
+      <HintPath>..\Lib\ZWCAD\R2021\ZwDatabaseMgdBrep.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="ZwManaged, Version=1.1.1.8, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Lib\ZWCAD\R2021\ZwManaged.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -75,8 +108,10 @@
     <Compile Include="DataBaseTools.cs" />
     <Compile Include="DxfTools.cs" />
     <Compile Include="EditEntityTools.cs" />
+    <Compile Include="Extensions\PolylineExtension.cs" />
     <Compile Include="GeometryTools.cs" />
     <Compile Include="HatchTools.cs" />
+    <Compile Include="Jigs\ArcJig.cs" />
     <Compile Include="Jigs\LineJig.cs" />
     <Compile Include="Jigs\PolyLineJig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

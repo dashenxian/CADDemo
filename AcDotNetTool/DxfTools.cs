@@ -3,7 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+#if ZWCAD
+using ZwSoft.ZwCAD.DatabaseServices;
+using ZwSoft.ZwCAD.EditorInput;
+using ZwSoft.ZwCAD.Geometry;
+#elif AutoCAD
+using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.Runtime;
+#endif
 
 namespace AcDotNetTool
 {
@@ -56,7 +66,12 @@ namespace AcDotNetTool
         public static void DxfExport(ObjectIdCollection objIds, int precision, string exportFileName)
         {
             var db = EditEntityTools.WBClone(objIds);
+            //
+#if ZWCAD
+            db.DxfOut(exportFileName, 11, DwgVersion.Current, false);
+#elif AutoCAD
             db.DxfOut(exportFileName, 11, DwgVersion.Current);
+#endif
         }
     }
 }

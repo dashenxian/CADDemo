@@ -3,8 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
+#if ZWCAD
+using ZwSoft.ZwCAD.DatabaseServices;
+using ZwSoft.ZwCAD.EditorInput;
+using ZwSoft.ZwCAD.Geometry;
+#elif AutoCAD
+using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.Runtime;
+#endif
 
 namespace AcDotNetTool
 {
@@ -31,28 +41,28 @@ namespace AcDotNetTool
             return VsToe.Y > 0 ? temp.GetAngleTo(VsToe) : -temp.GetAngleTo(VsToe);
         }
 
-        /// <summary>
-        /// 两点组成的线段与X轴之间夹角，逆时针方向
-        /// </summary>
-        /// <param name="basePt">起点</param>
-        /// <param name="endPt">终点</param>
-        /// <returns>角度</returns>
-        public static double Angle(Point3d startPt, Point3d endPt)
-        {
-            Line L = new Line(startPt, endPt);
-            return L.Angle;
-        }
+        ///// <summary>
+        ///// 两点组成的线段与X轴之间夹角，逆时针方向
+        ///// </summary>
+        ///// <param name="basePt">起点</param>
+        ///// <param name="endPt">终点</param>
+        ///// <returns>角度</returns>
+        //public static double Angle(Point3d startPt, Point3d endPt)
+        //{
+        //    Line L = new Line(startPt, endPt);
+        //    return L.Angle;
+        //}
 
-        /// <summary>
-        /// 两直线间夹角，逆时针方向
-        /// </summary>
-        /// <param name="line1">线1</param>
-        /// <param name="line2">线2</param>
-        /// <returns></returns>
-        public static double Angle(Line line1, Line line2)
-        {
-            return Math.Abs(line1.Angle - line2.Angle);
-        }
+        ///// <summary>
+        ///// 两直线间夹角，逆时针方向
+        ///// </summary>
+        ///// <param name="line1">线1</param>
+        ///// <param name="line2">线2</param>
+        ///// <returns></returns>
+        //public static double Angle(Line line1, Line line2)
+        //{
+        //    return Math.Abs(line1.Angle - line2.Angle);
+        //}
 
         #endregion
 
@@ -204,7 +214,7 @@ namespace AcDotNetTool
         /// <param name="C2">曲线2</param>
         /// <param name="inter">延伸方式</param>
         /// <returns>交点集合</returns>
-        public static Point3dCollection Intersect(Curve cur1, Curve cur2, Autodesk.AutoCAD.DatabaseServices.Intersect inter)
+        public static Point3dCollection Intersect(Curve cur1, Curve cur2, Intersect inter)
         {
             Point3dCollection ptc = new Point3dCollection();
             cur1.IntersectWith(cur2, inter, ptc, 0, 0);

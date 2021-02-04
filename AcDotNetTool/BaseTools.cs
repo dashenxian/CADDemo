@@ -1,10 +1,19 @@
-﻿using Autodesk.AutoCAD.Geometry;
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
+#if ZWCAD
+using ZwSoft.ZwCAD.ApplicationServices;
+using ZwSoft.ZwCAD.DatabaseServices;
+using ZwSoft.ZwCAD.EditorInput;
+using ZwSoft.ZwCAD.Geometry;
+#elif AutoCAD
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
-using System.Collections.Generic;
-using System.Linq;
+using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.Runtime;
+#endif
 
 namespace AcDotNetTool
 {
@@ -64,7 +73,9 @@ namespace AcDotNetTool
         /// <returns></returns>
         public static Extents2d ToExtents2d(this Extents3d Extents3d)
         {
-            return new Extents2d(Extents3d.MinPoint.ToPoint2d(), Extents3d.MaxPoint.ToPoint2d());
+            return new Extents2d(
+                Extents3d.MinPoint.X, Extents3d.MinPoint.Y,
+                Extents3d.MaxPoint.X, Extents3d.MaxPoint.Y);
         }
         /// <summary>
         /// 计算两点的中点
@@ -184,7 +195,7 @@ namespace AcDotNetTool
         /// <returns></returns>
         public static Point2d SelectPoint(string word)
         {
-            Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            Document doc = Application.DocumentManager.MdiActiveDocument;
             Database db = doc.Database;
             Editor ed = doc.Editor;
             var ent = ed.GetPoint(word);
@@ -433,9 +444,9 @@ namespace AcDotNetTool
 
             var ray = new Ray();
             ray.BasePoint = point.ToPoint3d();
-            ray.SecondPoint = new Point3d(point.X + 1, 0, 0);
+            ray.UnitDir = new Vector3d(1, 0, 0);
             Point3dCollection points = new Point3dCollection();
-            ray.IntersectWith(outL, Intersect.OnBothOperands, points, new IntPtr(), new IntPtr());
+            ray.IntersectWith(outL, Intersect.OnBothOperands, points, 0, 0);
             if (points.Count % 2 == 1)
             {
                 return true;
@@ -483,7 +494,7 @@ namespace AcDotNetTool
         {
             //直线的端点、交点、交点的中点都在内部，则直线在内部
             var points = new Point3dCollection();
-            inLine.IntersectWith(outLine, Intersect.OnBothOperands, points, new IntPtr(), new IntPtr());
+            inLine.IntersectWith(outLine, Intersect.OnBothOperands, points, 0, 0);
             var list = new List<Point2d>();
             list.Add(inLine.StartPoint.ToPoint2d());
             foreach (Point3d point in points)
