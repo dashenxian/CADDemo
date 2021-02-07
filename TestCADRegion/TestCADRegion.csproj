@@ -18,7 +18,6 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;AutoCAD</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -26,7 +25,6 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -46,9 +44,6 @@
     <Reference Include="acdbmgdbrep">
       <HintPath>..\Lib\CAD\R2014\acdbmgdbrep.dll</HintPath>
       <Private>False</Private>
-    </Reference>
-    <Reference Include="AcDotNetTool, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\AcDotNetTool.1.0.0.1\lib\net472\AcDotNetTool.dll</HintPath>
     </Reference>
     <Reference Include="acmgd">
       <HintPath>..\Lib\CAD\R2014\acmgd.dll</HintPath>
@@ -99,6 +94,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\AcDotNetTool\AcDotNetTool.csproj">
+      <Project>{02c11163-bd87-4411-87f2-11f455425dd4}</Project>
+      <Name>AcDotNetTool</Name>
+    </ProjectReference>
     <ProjectReference Include="..\CADModel\CADModel.csproj">
       <Project>{eafca7ef-7a6b-41bf-bfc1-9035378588e8}</Project>
       <Name>CADModel</Name>
