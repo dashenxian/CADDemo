@@ -269,10 +269,15 @@ namespace AcDotNetTool
         /// <returns>是否平行</returns>
         public static bool Parallel(Line line1, Line line2)
         {
-            Plane P = new Plane();
-            LineSegment3d l1 = new LineSegment3d(line1.StartPoint, line1.EndPoint);
-            LineSegment3d l2 = new LineSegment3d(line2.StartPoint, line2.EndPoint);
-            return l1.IsCoplanarWith(l2, out P);
+            var v1 = new Vector3d(line1.EndPoint.X - line1.StartPoint.X,
+                line1.EndPoint.Y - line1.StartPoint.Y,
+                line1.EndPoint.Z - line1.StartPoint.Z
+            );
+            var v2 = new Vector3d(line2.EndPoint.X - line2.StartPoint.X,
+                line2.EndPoint.Y - line2.StartPoint.Y,
+                line2.EndPoint.Z - line2.StartPoint.Z
+            );
+            return v1.IsParallelTo(v2);
         }
         #endregion
 
