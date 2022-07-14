@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using AcDotNetTool.Extensions;
 
 #if ZWCAD
 using ZwSoft.ZwCAD.ApplicationServices;
@@ -355,6 +356,20 @@ namespace AcDotNetTool
             }
         }
 
+        /// <summary>
+        /// 是否为逆时针
+        /// </summary>
+        /// <param name="Vertices"></param>
+        /// <returns></returns>
+        public static bool IsCCW(this Polyline pl)
+        {
+            var points = new List<Point3d>();
+            for (int i = 0; i < pl.NumberOfVertices; i++)
+            {
+                points.Add(pl.GetPoint3dAt(i));
+            }
+            return IsCCW(points);
+        }
         #region 是否在范围内
         /// <summary>
         /// 判断曲线是否在另一条曲线范围内
@@ -409,7 +424,7 @@ namespace AcDotNetTool
             var inRegArea = inReg.Area;
             outReg.BooleanOperation(BooleanOperationType.BoolIntersect, inReg);
 
-            return outReg.Area == inRegArea;
+            return Math.Abs(outReg.Area - inRegArea) < tolerance;
         }
         /// <summary>
         /// 判断点是否在曲线范围内
@@ -513,6 +528,213 @@ namespace AcDotNetTool
                 }
             }
             return true;
+        }
+        #endregion
+
+        /// <summary>
+        /// 修改曲线长度
+        /// </summary>
+        /// <param name="arc">曲线</param>
+        /// <param name="startPoint">新的起点</param>
+        /// <param name="endPoint">新的终点</param>
+        public static void EditArcEndPoint(this Arc arc, Point3d p1, Point3d p2)
+        {
+            var startPoint = p1;
+            var endPoint = p2;
+            var line1 = new Line(arc.StartPoint, startPoint);
+            var line2 = new Line(arc.EndPoint, endPoint);
+            var points = new Point3dCollection();
+            line1.IntersectWith(line2, Intersect.OnBothOperands, points, IntPtr.Zero, IntPtr.Zero);
+            if (points.Count != 0)
+            {
+                startPoint = p2;
+                endPoint = p1;
+            }
+
+            var stargAngle = Vector3d.XAxis.GetAngleTo(startPoint - arc.Center, arc.Normal);
+            var endAngle = Vector3d.XAxis.GetAngleTo(endPoint - arc.Center, arc.Normal);
+            arc.StartAngle = stargAngle;
+            arc.EndAngle = endAngle;
+            //Point3d midPoint = arc.GetPointAtParameter((arc.StartParam + arc.EndParam) / 2.0);
+            //CircularArc3d circArc = new CircularArc3d(arc.StartPoint, midPoint, endPoint);
+            //var angle = Vector3d.XAxis.GetAngleTo(arc.StartPoint - circArc.Center, circArc.Normal);
+            //if (!arc.IsWriteEnabled)
+            //    arc.UpgradeOpen();
+            //arc.Center = circArc.Center;
+            //arc.Normal = circArc.Normal;
+            //arc.Radius = circArc.Radius;
+            //arc.StartAngle = circArc.StartAngle + angle;
+            //arc.EndAngle = circArc.EndAngle + angle;
+        }
+
+        /// <summary>
+        /// 判断两根线是否平行
+        /// </summary>
+        /// <param name="line1"></param>
+        /// <param name="line2"></param>
+        /// <returns></returns>
+        public static bool Parallel(this Line line1, Line line2)
+        {
+            return line1.Delta.IsParallelTo(line2.Delta);
+        }
+
+        #region 不均匀偏移多段线
+        /// <summary>
+        /// 不均匀偏移多段线
+        /// </summary>
+        /// <param name="pl"></param>
+        /// <param name="widths"></param>
+        public static void Offset(this Polyline pl, IEnumerable<double> widths)
+        {
+            //是否逆时针
+            var iscw = pl.IsCCW();
+            DBObjectCollection objs = new DBObjectCollection();
+            pl.Explode(objs);
+            var widthList = widths.ToList();
+            if (widthList.Count != objs.Count)
+            {
+                throw new ArgumentException("偏移宽度列表数量不等于多段线数量");
+            }
+
+            var lineDirection = iscw ? -1 : 1;
+            var lines = new List<Curve>();
+            for (int i = 0; i < objs.Count; i++)
+            {
+                var obj = objs[i];
+                var preIndex = i - 1 < 0 ? objs.Count : i - 1;
+                var preDist = widthList[preIndex];
+                var dist = widthList[i];
+                var line = obj as Curve;
+                if (line == null)
+                {
+                    continue;
+                }
+                var direction = lineDirection;
+                if (line is Arc)
+                {
+                    var pl1 = new Polyline();
+                    pl1.AddVertexAt(0, line.StartPoint.ToPoint2d(), 0, 0, 0);
+                    pl1.AddVertexAt(1, line.EndPoint.ToPoint2d(), 0, 0, 0);
+                    pl1.JoinEntity(line);
+                    direction = BaseTools.IsInside(pl, pl1) ? 1 : -1;
+                }
+                else if (line is Line)
+                {
+                    var last = lines.LastOrDefault() as Line;
+                    if (last != null && ((Line)line).Parallel(last) && preDist == dist || line.StartPoint == line.EndPoint)
+                    {
+                        continue;
+                    }
+                    else if (last != null && ((Line)line).Parallel(last))
+                    {
+                        var newLine = line.Offset(dist * direction)[0];
+                        lines.AddRange(new[] { new Line(last.EndPoint, newLine.StartPoint) });
+                    }
+                }
+                lines.AddRange(line.Offset(dist * direction));
+                //index++;
+            }
+
+            if (lines.Count == 0)
+            {
+                BaseTools.WriteMessage("没有找到偏移的多段线");
+                return;
+            }
+            TrimCurve(lines);
+            ExtendIntersect(lines, iscw);
+            var newPl = new Polyline();
+            newPl.JoinEntities(lines.ToArray());
+            var region = Region.CreateFromCurves(lines.ToDBObjectCollection());
+            throw new NotImplementedException("返回数据还没实现");
+        }
+
+        /// <summary>
+        /// 修剪线段到足够短，避免相交线段超出
+        /// </summary>
+        /// <param name="lines"></param>
+        private static void TrimCurve(List<Curve> lines)
+        {
+            for (int i = 0; i < lines.Count(); i++)
+            {
+                if (lines[i] is Arc)
+                {
+                    var length = ((Arc)lines[i]).Length;
+                    var startPoint = lines[i].GetPointAtDist(length / 2 - length / 100);
+                    var endPoint = lines[i].GetPointAtDist(length / 2 + length / 100);
+                    var points = new Point3dCollection() { startPoint, endPoint };
+                    lines[i] = lines[i].GetSplitCurves(points)[1] as Curve;
+                }
+                else
+                {
+                    var length = lines[i].EndParam - lines[i].StartParam;
+                    var startPoint = lines[i].GetPointAtDist(length / 2 - length / 100);
+                    var endPoint = lines[i].GetPointAtDist(length / 2 + length / 100);
+                    lines[i].StartPoint = startPoint;
+                    lines[i].EndPoint = endPoint;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 延长线段相交
+        /// </summary>
+        /// <param name="lines"></param>
+        /// <param name="iscw">是否逆时针</param>
+        private static void ExtendIntersect(List<Curve> lines, bool iscw)
+        {
+            var intersectPoints = new List<Point3d>();
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var nextIndex = i + 1 == lines.Count ? 0 : i + 1;
+                var nextPoints = new Point3dCollection();
+                lines[i].IntersectWith(lines[nextIndex], Intersect.ExtendBoth, nextPoints, IntPtr.Zero, IntPtr.Zero);
+                //prePoints.Count == 0 ||
+                if (nextPoints.Count == 0)
+                {
+                    throw new System.Exception("缺少交点");
+                }
+                var nextPoint = nextPoints[0];
+                if (nextPoints.Count > 1)
+                {
+                    var length = lines[i].EndParam - lines[i].StartParam;
+                    var middlePoint = lines[i].GetPointAtDist(length / 2);
+                    var nextLength = lines[nextIndex].EndParam - lines[nextIndex].StartParam;
+                    var nextMiddlePoint = lines[nextIndex].GetPointAtDist(nextLength / 2);
+                    foreach (Point3d point3d in nextPoints)
+                    {
+                        if (nextPoint.X < Math.Max(nextMiddlePoint.X, middlePoint.X)
+                            && nextPoint.X > Math.Min(nextMiddlePoint.X, middlePoint.X)
+                            && nextPoint.Y < Math.Max(nextMiddlePoint.Y, middlePoint.Y)
+                            && nextPoint.Y > Math.Min(nextMiddlePoint.Y, middlePoint.Y)
+                           )
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            nextPoint = point3d;
+                        }
+                    }
+                }
+
+                intersectPoints.Add(nextPoint);
+
+            }
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var preIndex = i - 1 < 0 ? lines.Count - 1 : i - 1;
+                var prePoint = intersectPoints[preIndex];
+                var nextPoint = intersectPoints[i];
+                if (lines[i] is Arc)
+                {
+                    BaseTools.EditArcEndPoint((Arc)lines[i], prePoint, nextPoint);
+                }
+                else
+                {
+                    lines[i].Extend(true, prePoint);
+                    lines[i].Extend(false, nextPoint);
+                }
+            }
         }
         #endregion
     }

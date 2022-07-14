@@ -156,6 +156,21 @@ namespace AcDotNetTool
         {
             return MidPoint(line.StartPoint, line.EndPoint);
         }
+        /// <summary>
+        /// 计算指定起始点之间的中点
+        /// </summary>
+        /// <param name="pl"></param>
+        /// <param name="startIndex"></param>
+        /// <param name="endIndex"></param>
+        /// <returns></returns>
+        public static Point3d MidPoint(this Polyline pl, double startIndex, double endIndex)
+        {
+            var dist1 = pl.GetDistanceAtParameter(startIndex);
+            var dist2 = pl.GetDistanceAtParameter(endIndex);
+            var dist = (dist1 + dist2) / 2;
+            var point = pl.GetPointAtDist(dist);
+            return point;
+        }
         #endregion
 
         #region 重合

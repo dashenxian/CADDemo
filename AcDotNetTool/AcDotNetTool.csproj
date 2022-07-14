@@ -1,119 +1,74 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{02C11163-BD87-4411-87F2-11F455425DD4}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>AcDotNetTool</RootNamespace>
-    <AssemblyName>AcDotNetTool</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <Deterministic>true</Deterministic>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <ItemGroup Condition="$(DefineConstants.Contains(AutoCAD))">
-    <Reference Include="accoremgd, Version=19.1.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Lib\CAD\R2014\accoremgd.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="AcCui, Version=19.1.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Lib\CAD\R2014\AcCui.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="acdbmgd, Version=19.1.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Lib\CAD\R2014\acdbmgd.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="acdbmgdbrep, Version=19.1.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Lib\CAD\R2014\acdbmgdbrep.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="acmgd, Version=19.1.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Lib\CAD\R2014\acmgd.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="AcWindows, Version=19.1.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Lib\CAD\R2014\AcWindows.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="AdWindows, Version=4.0.24.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Lib\CAD\R2014\AdWindows.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup Condition="$(DefineConstants.Contains(ZWCAD))">
-    <Reference Include="ZcWindows">
-      <HintPath>..\Lib\ZWCAD\R2021\ZcWindows.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="ZdWindows">
-      <HintPath>..\Lib\ZWCAD\R2021\ZdWindows.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="ZwDatabaseMgd, Version=1.1.1.8, Culture=neutral, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Lib\ZWCAD\R2021\ZwDatabaseMgd.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="ZwDatabaseMgdBrep">
-      <HintPath>..\Lib\ZWCAD\R2021\ZwDatabaseMgdBrep.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="ZwManaged, Version=1.1.1.8, Culture=neutral, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Lib\ZWCAD\R2021\ZwManaged.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="PresentationCore" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="AddEntityTools.cs" />
-    <Compile Include="BaseTools.cs" />
-    <Compile Include="DataBaseTools.cs" />
-    <Compile Include="DxfTools.cs" />
-    <Compile Include="EditEntityTools.cs" />
-    <Compile Include="Extensions\PolylineExtension.cs" />
-    <Compile Include="GeometryTools.cs" />
-    <Compile Include="HatchTools.cs" />
-    <Compile Include="Jigs\ArcJig.cs" />
-    <Compile Include="Jigs\LineJig.cs" />
-    <Compile Include="Jigs\PolyLineJig.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup />
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+	<PropertyGroup>
+		<TargetFramework>net472</TargetFramework>
+		<GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+		<GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+		<GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+		<GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+		<GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+		<GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+		<GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+	</PropertyGroup>
+	<ItemGroup Condition="$(DefineConstants.Contains(AutoCAD))">
+		<Reference Include="accoremgd, Version=19.1.0.0, Culture=neutral, processorArchitecture=AMD64">
+			<SpecificVersion>False</SpecificVersion>
+			<HintPath>..\Lib\CAD\R2014\accoremgd.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="AcCui, Version=19.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+			<SpecificVersion>False</SpecificVersion>
+			<HintPath>..\Lib\CAD\R2014\AcCui.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="acdbmgd, Version=19.1.0.0, Culture=neutral, processorArchitecture=AMD64">
+			<SpecificVersion>False</SpecificVersion>
+			<HintPath>..\Lib\CAD\R2014\acdbmgd.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="acdbmgdbrep, Version=19.1.0.0, Culture=neutral, processorArchitecture=AMD64">
+			<SpecificVersion>False</SpecificVersion>
+			<HintPath>..\Lib\CAD\R2014\acdbmgdbrep.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="acmgd, Version=19.1.0.0, Culture=neutral, processorArchitecture=AMD64">
+			<SpecificVersion>False</SpecificVersion>
+			<HintPath>..\Lib\CAD\R2014\acmgd.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="AcWindows, Version=19.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+			<SpecificVersion>False</SpecificVersion>
+			<HintPath>..\Lib\CAD\R2014\AcWindows.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="AdWindows, Version=4.0.24.0, Culture=neutral, processorArchitecture=MSIL">
+			<SpecificVersion>False</SpecificVersion>
+			<HintPath>..\Lib\CAD\R2014\AdWindows.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+	</ItemGroup>
+	<ItemGroup Condition="$(DefineConstants.Contains(ZWCAD))">
+		<Reference Include="ZcWindows">
+			<HintPath>..\Lib\ZWCAD\R2021\ZcWindows.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="ZdWindows">
+			<HintPath>..\Lib\ZWCAD\R2021\ZdWindows.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="ZwDatabaseMgd, Version=1.1.1.8, Culture=neutral, processorArchitecture=x86">
+			<SpecificVersion>False</SpecificVersion>
+			<HintPath>..\Lib\ZWCAD\R2021\ZwDatabaseMgd.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="ZwDatabaseMgdBrep">
+			<HintPath>..\Lib\ZWCAD\R2021\ZwDatabaseMgdBrep.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="ZwManaged, Version=1.1.1.8, Culture=neutral, processorArchitecture=x86">
+			<SpecificVersion>False</SpecificVersion>
+			<HintPath>..\Lib\ZWCAD\R2021\ZwManaged.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+	</ItemGroup>
+
 </Project>

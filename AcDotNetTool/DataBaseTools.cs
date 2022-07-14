@@ -238,7 +238,25 @@ namespace AcDotNetTool
 
 
         #region 添加对象到块表记录
+        /// <summary>
+        /// 将一个实体添加到当前空间
+        /// </summary>
+        /// <param name="ent">对象</param>
+        /// <param name="db">数据库</param>
+        /// <returns></returns>
+        public static ObjectId AddIn(this Entity ent)
+        {
+            ObjectId id;
+            var db = DocumentDatabase();
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
+                id = ((BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite, false)).AppendEntity(ent);
+                tr.AddNewlyCreatedDBObject(ent, true);
+                tr.Commit();
+            }
 
+            return id;
+        }
         /// <summary>
         /// 将一个实体添加到当前空间
         /// </summary>
