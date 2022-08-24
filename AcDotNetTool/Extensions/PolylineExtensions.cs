@@ -17,7 +17,7 @@ using Autodesk.AutoCAD.Runtime;
 
 namespace AcDotNetTool.Extensions
 {
-    public static class PolylineExtension
+    public static class PolylineExtensions
     {
         /// <summary>
         /// 添加或设置顶点，顶点不存在时添加，存在时设置
@@ -70,5 +70,6 @@ namespace AcDotNetTool.Extensions
         {
             return polyline.TransactionExcute(pl => pl.Closed = true);
         }
+
     }
 }

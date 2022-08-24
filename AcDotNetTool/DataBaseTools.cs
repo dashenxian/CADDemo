@@ -248,14 +248,7 @@ namespace AcDotNetTool
         {
             ObjectId id;
             var db = DocumentDatabase();
-            using (Transaction tr = db.TransactionManager.StartTransaction())
-            {
-                id = ((BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite, false)).AppendEntity(ent);
-                tr.AddNewlyCreatedDBObject(ent, true);
-                tr.Commit();
-            }
-
-            return id;
+            return AddIn(ent, db);
         }
         /// <summary>
         /// 将一个实体添加到当前空间
@@ -283,17 +276,8 @@ namespace AcDotNetTool
         /// <returns></returns>
         public static ObjectId AddEntToBlock(this Entity ent, BlockTableRecord block)
         {
-            ObjectId id = new ObjectId();
             Database db = block.Database;
-            using (Transaction transaction = db.TransactionManager.StartTransaction())
-            {
-                transaction.GetObject(block.ObjectId, OpenMode.ForWrite);
-                id = block.AppendEntity(ent);
-                transaction.AddNewlyCreatedDBObject(ent, true);
-                transaction.Commit();
-            }
-
-            return id;
+            return AddIn(ent, db);
         }
 
         #endregion
@@ -753,7 +737,7 @@ namespace AcDotNetTool
         public static Database ReadDxfFile(string fileName)
         {
             var database = new Database(false, false);
-            database.DxfIn(fileName,"dxflog.txt");
+            database.DxfIn(fileName, "dxflog.txt");
             return database;
         }
 

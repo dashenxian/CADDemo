@@ -27,17 +27,11 @@ namespace TestCADRegion
         {
             try
             {
-                //var c1 = BaseTools.Select("选择多段线") as Curve;
-                //TestJoin();
-                //Offset();
-                var line = new Line(new Point3d(14984.7850763984, 74983.6502236016, 0),
-                    new Point3d(14984.7850763984, 74983.6526230616, 0));
+                var c1 = BaseTools.Select("选择多段线") as Curve;
+                IMinimumAreaBoundingRectangle mabr = new MinimumAreaBoundingRectangle();
+                var pl = mabr.GetMinimumAreaBoundingRectangle(c1);
+                DataBaseTools.AddIn(pl);
 
-                var prePoint = new Point3d(14984.7850763984, 74983.5914236016, 0);
-                var nextPoint = new Point3d(14984.7850763984, 74983.7114236016, 0);
-                line.StartPoint = prePoint;
-                line.EndPoint = nextPoint;
-                DataBaseTools.AddIn(line);
             }
             catch (System.Exception e)
             {
@@ -119,7 +113,7 @@ namespace TestCADRegion
             //trans?.Commit();
             //trans?.Dispose();
         }
- 
+
 
         private static void Test1()
         {

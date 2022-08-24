@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using AcDotNetTool.Extensions;
 
 #if ZWCAD
 using ZwSoft.ZwCAD.DatabaseServices;
@@ -326,6 +327,61 @@ namespace AcDotNetTool
             solid1.BooleanOperation(type, solid2);
             return solid1;
         }
+        #endregion
+
+        #region 分割
+        /// <summary>
+        /// 分割图形
+        /// </summary>
+        /// <param name="pls">要分割的多段线（不支持自相交），支持环岛（多个）</param>
+        /// <param name="spiltLine">分割的线</param>
+        /// <param name="amount">分割后图形的数量</param>
+        /// <returns></returns>
+        public static List<Polyline> SegmentationPolyline(List<Polyline> pls, Polyline spiltLine, int amount = 2)
+        {
+
+            pls = pls.Select(i =>
+            {
+                var pl = i.Clone() as Polyline;
+                pl.Closed = true;
+                return pl;
+            }).ToList();
+            VerifyArea(pls);
+
+            spiltLine = spiltLine.Clone() as Polyline;
+            return pls;
+        }
+
+        private static void VerifyArea(List<Polyline> pls)
+        {
+            var regs = pls.Select(i => Region.CreateFromCurves(new DBObjectCollection { i })[0] as Region).ToList();
+            foreach (var reg in regs)
+            {
+                var isSeparation = true;
+                foreach (var region in regs)
+                {
+                    if (reg == region)
+                    {
+                        continue;
+                    }
+
+                    var boolIntersectReg = reg.Clone() as Region;
+                    boolIntersectReg.BooleanOperation(BooleanOperationType.BoolIntersect, region);
+                    if (boolIntersectReg.Area.Equals(reg.Area, BaseTools.Tolerance.EqualPoint) ||
+                        boolIntersectReg.Area.Equals(region.Area, BaseTools.Tolerance.EqualPoint))
+                    {
+                        isSeparation = false;
+                        break;
+                    }
+                }
+
+                if (isSeparation)
+                {
+                    throw new System.ArgumentException("要分割的多段线有多个不相接区域");
+                }
+            }
+        }
+
         #endregion
     }
 }

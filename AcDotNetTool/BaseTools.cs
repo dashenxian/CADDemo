@@ -8,6 +8,7 @@ using ZwSoft.ZwCAD.ApplicationServices;
 using ZwSoft.ZwCAD.DatabaseServices;
 using ZwSoft.ZwCAD.EditorInput;
 using ZwSoft.ZwCAD.Geometry;
+using ZwSoft.ZwCAD.Runtime;
 #elif AutoCAD
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -26,7 +27,7 @@ namespace AcDotNetTool
         /// <summary>
         /// 容差
         /// </summary>
-        public static Tolerance Tolerance = new Tolerance(0.000001, 0.000001);
+        public static Tolerance Tolerance = new Tolerance(0.0000000001, 0.00000000001);
 
         #region 坐标点转换
 
@@ -143,7 +144,7 @@ namespace AcDotNetTool
         /// <returns></returns>
         public static Region CreateRegion(this Polyline polyline)
         {
-            if (polyline.Area < 0.0000001)
+            if (polyline.Area < Tolerance.EqualPoint)
             {
                 return null;
             }
