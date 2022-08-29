@@ -27,10 +27,36 @@ namespace TestCADRegion
         {
             try
             {
-                var c1 = BaseTools.Select("选择多段线") as Curve;
-                IMinimumAreaBoundingRectangle mabr = new MinimumAreaBoundingRectangle();
-                var pl = mabr.GetMinimumAreaBoundingRectangle(c1);
-                DataBaseTools.AddIn(pl);
+                var c1 = BaseTools.Select("选择被分割线") as Polyline;//Region;
+                if (c1 == null)
+                {
+                    BaseTools.WriteMessage("选择错误");
+                    return;
+                }
+                var c2 = BaseTools.Select("选择分割线") as Polyline;//Region;
+                if (c2 == null)
+                {
+                    BaseTools.WriteMessage("选择错误");
+                    return;
+                }
+
+                var pls = c1.GetSplitCurves(c2);
+                foreach (var curve in pls)
+                {
+                    DataBaseTools.AddIn(curve);
+                }
+                //var pl = c1.ToPolylines();
+                //foreach (var pl in pls)
+                //{
+                //    for (int i = 0; i < pl.NumberOfVertices; i++)
+                //    {
+                //        var p = pl.GetPointAtParameter(i);
+                //        BaseTools.WriteMessage($"{p.X},{p.Y},{p.Z}\n");
+                //    }
+                //}
+                //IMinimumAreaBoundingRectangle mabr = new MinimumAreaBoundingRectangle();
+                //var pl = mabr.GetMinimumAreaBoundingRectangle(c1);
+
 
             }
             catch (System.Exception e)

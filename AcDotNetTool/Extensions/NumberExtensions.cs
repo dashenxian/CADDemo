@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,6 +19,21 @@ namespace AcDotNetTool.Extensions
         public static bool Equals(this double value1, double value2, double tolerance)
         {
             return Math.Abs(value1 - value2) < tolerance;
+        }
+        /// <summary>
+        /// 计算方差
+        /// </summary>
+        /// <param name="values"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static double Variance(this IEnumerable<double> values)
+        {
+            if (values == null)
+            {
+                throw new ArgumentNullException(nameof(values));
+            }
+            var avg = values.Average();
+            return values.Sum(x => Math.Pow(x - avg, 2)) / values.Count();
         }
     }
 }

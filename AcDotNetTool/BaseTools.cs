@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using AcDotNetTool.Extensions;
+using System.Security.Cryptography;
+
 
 #if ZWCAD
 using ZwSoft.ZwCAD.ApplicationServices;
@@ -9,12 +12,14 @@ using ZwSoft.ZwCAD.DatabaseServices;
 using ZwSoft.ZwCAD.EditorInput;
 using ZwSoft.ZwCAD.Geometry;
 using ZwSoft.ZwCAD.Runtime;
+using ZwSoft.ZwCAD.BoundaryRepresentation;
 #elif AutoCAD
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
+using Autodesk.AutoCAD.BoundaryRepresentation;
 #endif
 
 namespace AcDotNetTool
@@ -135,6 +140,24 @@ namespace AcDotNetTool
             }
             return list;
         }
+        /// <summary>
+        /// 转为List
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        public static IEnumerable<T> ToList<T>(this IList source)
+        {
+            var list = new List<T>();
+            foreach (var item in source)
+            {
+                if (item is T)
+                {
+                    list.Add((T)item);
+                }
+            }
+            return list;
+        }
         #endregion
 
         /// <summary>
@@ -154,6 +177,79 @@ namespace AcDotNetTool
             dBObjectCollection.Add(pl);
             var reg = Region.CreateFromCurves(dBObjectCollection)[0] as Region;
             return reg;
+        }
+
+        /// <summary>
+        /// 面域转为多段线
+        /// </summary>
+        /// <param name="region"></param>
+        /// <returns></returns>
+        public static Polyline ToPolylines(this Region region)
+        {
+            Polyline pl = new Polyline();
+            var brep = new Brep(region);
+            var edges = brep.Edges.ToList();
+            var list = new List<Curve>();
+            //获取边界线
+            foreach (var edge in edges)
+            {
+                var eCurve = (ExternalCurve3d)edge.Curve;
+
+                if (eCurve.IsCircularArc || eCurve.IsLineSegment)
+                {
+                    var curve = Polyline.CreateFromGeCurve(eCurve.NativeCurve);
+                    list.Add(curve);
+                    //var angle = arc.EndAngle - arc.StartAngle;
+                    //if (angle < 0)
+                    //    angle += Math.PI * 2.0;
+                    //double bulge = Math.Tan(angle / 4.0);
+                }
+            }
+            //获取到的边界可能不是第二条线的起点对应第一条线的终点，而是第一条线的起点对应第二条线的终点，线的顺序是反向，
+            //这里重新排序，保证边界线是顺序相接的
+            if (list.Count > 1 && list[0].StartPoint == list[1].EndPoint)
+            {
+                list.Reverse();
+            }
+            //重新绘制多段线
+            foreach (var curve in list)
+            {
+                if (curve is Line)
+                {
+                    if (pl.NumberOfVertices == 0)
+                    {
+                        pl.AddVertexAt(pl.NumberOfVertices, curve.StartPoint.ToPoint2d(), 0, 0, 0);
+                    }
+                    pl.AddVertexAt(pl.NumberOfVertices, curve.EndPoint.ToPoint2d(), 0, 0, 0);
+                }
+                else if (curve is Arc)
+                {
+                    var arc = curve as Arc;
+                    var diffAngle = arc.EndAngle - arc.StartAngle;
+                    double bulge;
+                    if (diffAngle < 0)
+                    {
+                        diffAngle += 2 * Math.PI;
+                        bulge = Math.Tan(diffAngle / 4) * -1;
+                    }
+                    else
+                    {
+                        bulge = Math.Tan(diffAngle / 4);
+                    }
+                    //弧线要根据正向或反向弧计算bulge
+                    bulge *= arc.Normal.Z;
+                    if (bulge != 0)
+                    {
+                        if (pl.NumberOfVertices != 0)
+                        {
+                            pl.RemoveVertexAt(pl.NumberOfVertices - 1);
+                        }
+                        pl.AddVertexAt(pl.NumberOfVertices, curve.StartPoint.ToPoint2d(), bulge, 0, 0);
+                    }
+                    pl.AddVertexAt(pl.NumberOfVertices, curve.EndPoint.ToPoint2d(), 0, 0, 0);
+                }
+            }
+            return pl;
         }
 
         #region 角度与弧度转换
@@ -738,5 +834,59 @@ namespace AcDotNetTool
             }
         }
         #endregion
+
+        /// <summary>
+        /// 分割曲线
+        /// </summary>
+        /// <param name="source">被分割的曲线</param>
+        /// <param name="splitCurve">分割的曲线</param>
+        /// <param name="maxSplitNumber">分割后的区域数量，当被分割曲线和分割曲线有超过2个交点时，可以被分割成超过2个区域</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static IEnumerable<Polyline> GetSplitCurves(this Polyline source, Curve splitCurve, int maxSplitNumber = 2)
+        {
+            var points = new Point3dCollection();
+            source.IntersectWith(splitCurve, Intersect.OnBothOperands, points, IntPtr.Zero, IntPtr.Zero);
+            if (points.Count < 2)
+            {
+                throw new ArgumentException("分割曲线与原曲线的交点少于2个，无法分割");
+            }
+
+            if (!source.Closed)
+            {
+                source = source.Clone() as Polyline;
+                source.Closed = true;
+            }
+
+            var splitPoints = new Point3dCollection();
+            for (int i = 0; i < points.Count && i < maxSplitNumber; i++)
+            {
+                splitPoints.Add(points[i]);
+            }
+            var splitCurves = source.GetSplitCurves(splitPoints);
+            var pls = splitCurves.ToList<Polyline>();
+            foreach (var pl in pls)
+            {
+                if (pl.GetBulgeAt(pl.NumberOfVertices - 1) != 0)
+                {
+                    pl.SetBulgeAt(pl.NumberOfVertices - 1, 0);
+                }
+                pl.Closed = true;
+            }
+            return pls;
+        }
+
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        ///// <param name="sources"></param>
+        ///// <param name="splitCurve"></param>
+        ///// <param name="maxSplitNumber"></param>
+        ///// <returns></returns>
+        //public static IEnumerable<IEnumerable<Polyline>> GetSplitCurves(this IEnumerable<Polyline> sources, Curve splitCurve,
+        //    int maxSplitNumber = 2)
+        //{
+
+        //}
     }
 }
