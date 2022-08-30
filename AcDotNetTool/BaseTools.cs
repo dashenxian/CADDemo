@@ -32,7 +32,7 @@ namespace AcDotNetTool
         /// <summary>
         /// 容差
         /// </summary>
-        public static Tolerance Tolerance = new Tolerance(0.0000000001, 0.00000000001);
+        public static Tolerance Tolerance = new Tolerance(0.0000001, 0.0000001);
 
         #region 坐标点转换
 
@@ -158,6 +158,23 @@ namespace AcDotNetTool
             }
             return list;
         }
+        /// <summary>
+        /// 列表转为cad集合
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T2"></typeparam>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        public static T ToCollection<T, T2>(this IEnumerable<T2> source) where T : IList, new()
+        {
+            var list = new T();
+            foreach (var item in source)
+            {
+                list.Add(item);
+            }
+            return list;
+        }
+
         #endregion
 
         /// <summary>
@@ -165,7 +182,7 @@ namespace AcDotNetTool
         /// </summary>
         /// <param name="polyline"></param>
         /// <returns></returns>
-        public static Region CreateRegion(this Polyline polyline)
+        public static Region ToRegion(this Polyline polyline)
         {
             if (polyline.Area < Tolerance.EqualPoint)
             {
@@ -184,74 +201,114 @@ namespace AcDotNetTool
         /// </summary>
         /// <param name="region"></param>
         /// <returns></returns>
-        public static Polyline ToPolylines(this Region region)
+        public static Polyline ToPolyline(this Region region)
         {
             Polyline pl = new Polyline();
             var brep = new Brep(region);
             var edges = brep.Edges.ToList();
-            var list = new List<Curve>();
-            //获取边界线
-            foreach (var edge in edges)
+            var list = new List<PolylinePoint>();
+            var curEdge = edges[0];
+            Point3d? endPoint = curEdge.Curve.StartPoint;
+            do
             {
-                var eCurve = (ExternalCurve3d)edge.Curve;
+                Point3d? startPoint = null;
+                curEdge = edges.FirstOrDefault(i => endPoint == i.Curve.StartPoint);
+                var isReverse = 1;
+                if (curEdge != null)
+                {
+                    endPoint = curEdge.Curve.EndPoint;
+                    startPoint = curEdge.Curve.StartPoint;
+                }
+                else
+                {
+                    curEdge = edges.FirstOrDefault(i => i != curEdge && endPoint == i.Curve.EndPoint);
+                    endPoint = curEdge?.Curve.StartPoint;
+                    startPoint = curEdge?.Curve.EndPoint;
+                    isReverse = -1;
+                }
 
-                if (eCurve.IsCircularArc || eCurve.IsLineSegment)
+                if (curEdge == null)
                 {
-                    var curve = Polyline.CreateFromGeCurve(eCurve.NativeCurve);
-                    list.Add(curve);
-                    //var angle = arc.EndAngle - arc.StartAngle;
-                    //if (angle < 0)
-                    //    angle += Math.PI * 2.0;
-                    //double bulge = Math.Tan(angle / 4.0);
+                    break;
                 }
-            }
-            //获取到的边界可能不是第二条线的起点对应第一条线的终点，而是第一条线的起点对应第二条线的终点，线的顺序是反向，
-            //这里重新排序，保证边界线是顺序相接的
-            if (list.Count > 1 && list[0].StartPoint == list[1].EndPoint)
-            {
-                list.Reverse();
-            }
+                edges.Remove(curEdge);
+                double bulge;
+                var eCurve = (ExternalCurve3d)curEdge.Curve;
+                if (eCurve.IsCircularArc)
+                {
+                    var arc = Arc.CreateFromGeCurve(eCurve.NativeCurve) as Arc;
+                    bulge = GetBulge(arc) * isReverse;
+                }
+                else
+                {
+                    bulge = 0;
+                }
+
+                if (bulge != 0)
+                {
+                    if (list.Count != 0)
+                    {
+                        list.RemoveAt(list.Count - 1);
+                    }
+                    list.Add(new PolylinePoint { Point2d = startPoint.Value.ToPoint2d(), Bulge = bulge });
+                }
+
+                list.Add(new PolylinePoint { Point2d = endPoint.Value.ToPoint2d(), Bulge = bulge });
+
+            } while (true);
+            ////获取边界线
+            //foreach (var edge in edges)
+            //{
+            //    var eCurve = (ExternalCurve3d)edge.Curve;
+
+            //    if (eCurve.IsCircularArc || eCurve.IsLineSegment)
+            //    {
+            //        var curve = Polyline.CreateFromGeCurve(eCurve.NativeCurve);
+            //        list.Add(curve);
+            //    }
+            //}
+            ////获取到的边界可能不是第二条线的起点对应第一条线的终点，而是第一条线的起点对应第二条线的终点，线的顺序是反向，
+            ////这里重新排序，保证边界线是顺序相接的
+            //if (list.Count > 1 && list[0].StartPoint == list[1].EndPoint)
+            //{
+            //    list.Reverse();
+            //}
             //重新绘制多段线
-            foreach (var curve in list)
+            foreach (var polylinePoint in list)
             {
-                if (curve is Line)
-                {
-                    if (pl.NumberOfVertices == 0)
-                    {
-                        pl.AddVertexAt(pl.NumberOfVertices, curve.StartPoint.ToPoint2d(), 0, 0, 0);
-                    }
-                    pl.AddVertexAt(pl.NumberOfVertices, curve.EndPoint.ToPoint2d(), 0, 0, 0);
-                }
-                else if (curve is Arc)
-                {
-                    var arc = curve as Arc;
-                    var diffAngle = arc.EndAngle - arc.StartAngle;
-                    double bulge;
-                    if (diffAngle < 0)
-                    {
-                        diffAngle += 2 * Math.PI;
-                        bulge = Math.Tan(diffAngle / 4) * -1;
-                    }
-                    else
-                    {
-                        bulge = Math.Tan(diffAngle / 4);
-                    }
-                    //弧线要根据正向或反向弧计算bulge
-                    bulge *= arc.Normal.Z;
-                    if (bulge != 0)
-                    {
-                        if (pl.NumberOfVertices != 0)
-                        {
-                            pl.RemoveVertexAt(pl.NumberOfVertices - 1);
-                        }
-                        pl.AddVertexAt(pl.NumberOfVertices, curve.StartPoint.ToPoint2d(), bulge, 0, 0);
-                    }
-                    pl.AddVertexAt(pl.NumberOfVertices, curve.EndPoint.ToPoint2d(), 0, 0, 0);
-                }
+                pl.AddVertexAt(pl.NumberOfVertices, polylinePoint.Point2d, polylinePoint.Bulge, 0, 0);
+                //if (curve is Line)
+                //{
+                //    if (pl.NumberOfVertices == 0)
+                //    {
+                //        pl.AddVertexAt(pl.NumberOfVertices, curve.StartPoint.ToPoint2d(), 0, 0, 0);
+                //    }
+                //    pl.AddVertexAt(pl.NumberOfVertices, curve.EndPoint.ToPoint2d(), 0, 0, 0);
+                //}
+                //else if (curve is Arc)
+                //{
+                //    var arc = curve as Arc;
+                //    var bulge = GetBulge(arc);
+                //    if (bulge != 0)
+                //    {
+                //        if (pl.NumberOfVertices != 0)
+                //        {
+                //            pl.RemoveVertexAt(pl.NumberOfVertices - 1);
+                //        }
+                //        pl.AddVertexAt(pl.NumberOfVertices, curve.StartPoint.ToPoint2d(), bulge, 0, 0);
+                //    }
+                //    pl.AddVertexAt(pl.NumberOfVertices, curve.EndPoint.ToPoint2d(), 0, 0, 0);
+                //}
             }
             return pl;
         }
 
+
+        class PolylinePoint
+        {
+            public Point2d Point2d { get; set; }
+            public double Bulge { get; set; }
+        }
         #region 角度与弧度转换
         /// <summary>
         /// 角度转化为弧度
@@ -270,6 +327,29 @@ namespace AcDotNetTool
         public static double AngleToDegree(Double angle)
         {
             return angle * 180 / Math.PI;
+        }
+        /// <summary>
+        /// 获取角度
+        /// </summary>
+        /// <param name="arc"></param>
+        /// <returns></returns>
+        public static double GetBulge(this Arc arc)
+        {
+            var diffAngle = arc.EndAngle - arc.StartAngle;
+            double bulge;
+            if (diffAngle < 0)
+            {
+                diffAngle += 2 * Math.PI;
+                bulge = Math.Tan(diffAngle / 4) * -1;
+            }
+            else
+            {
+                bulge = Math.Tan(diffAngle / 4);
+            }
+
+            //弧线要根据正向或反向弧计算bulge
+            bulge *= arc.Normal.Z;
+            return bulge;
         }
         #endregion
 
@@ -329,16 +409,16 @@ namespace AcDotNetTool
         /// </summary>
         /// <param name="tps">类型过滤枚举类</param>
         /// <returns></returns>
-        public static IEnumerable<Entity> GetSelection()
+        public static IEnumerable<Entity> Selects(string word)
         {
-            return GetSelection(null);
+            return Selects(word, Array.Empty<FilterType>());
         }
         /// <summary>
         /// 提示用户选择实体
         /// </summary>
         /// <param name="tps">类型过滤枚举类</param>
         /// <returns></returns>
-        public static IEnumerable<Entity> GetSelection(FilterType[] tps)
+        public static IEnumerable<Entity> Selects(string word, FilterType[] tps)
         {
             Document doc = Application.DocumentManager.MdiActiveDocument;
             Database db = doc.Database;
@@ -346,9 +426,12 @@ namespace AcDotNetTool
             var EntityCollection = new List<Entity>();
 
             PromptSelectionResult ents;
+            var opt = new PromptSelectionOptions();
+            opt.MessageForAdding = word;
             if (tps == null || !tps.Any())
             {
-                ents = ed.GetSelection();
+
+                ents = ed.GetSelection(opt);
             }
             else// 按照过滤器进行选择
             {
@@ -361,7 +444,7 @@ namespace AcDotNetTool
                     filList[i + 1] = new TypedValue((int)DxfCode.Start, tps[i].ToString());
                 }// 建立过滤器
                 SelectionFilter filter = new SelectionFilter(filList);
-                ents = ed.GetSelection(filter);
+                ents = ed.GetSelection(opt, filter);
             }
 
             if (ents.Status == PromptStatus.OK)
@@ -467,6 +550,7 @@ namespace AcDotNetTool
             }
             return IsCCW(points);
         }
+
         #region 是否在范围内
         /// <summary>
         /// 判断曲线是否在另一条曲线范围内
@@ -515,8 +599,8 @@ namespace AcDotNetTool
                 return false;
             }
 
-            var inReg = inLine.CreateRegion();
-            var outReg = outLine.CreateRegion();
+            var inReg = inLine.ToRegion();
+            var outReg = outLine.ToRegion();
 
             var inRegArea = inReg.Area;
             outReg.BooleanOperation(BooleanOperationType.BoolIntersect, inReg);
@@ -585,16 +669,16 @@ namespace AcDotNetTool
         /// <returns></returns>
         public static bool IsInside(Extents2d outExtent, Extents2d inExtent, double tolerance)
         {
-            if (outExtent.MaxPoint.X + tolerance < inExtent.MaxPoint.X
-                || outExtent.MaxPoint.Y + tolerance < inExtent.MaxPoint.Y
-                || outExtent.MinPoint.X - tolerance > inExtent.MinPoint.X
-                || outExtent.MinPoint.Y - tolerance > inExtent.MinPoint.Y
+            if (outExtent.MaxPoint.X + tolerance > inExtent.MaxPoint.X
+                && outExtent.MaxPoint.Y + tolerance > inExtent.MaxPoint.Y
+                && outExtent.MinPoint.X - tolerance < inExtent.MinPoint.X
+                && outExtent.MinPoint.Y - tolerance < inExtent.MinPoint.Y
             )
             {
-                return false;
+                return true;
             }
 
-            return true;
+            return false;
         }
         /// <summary>
         /// 判断直线是否在范围内
@@ -835,6 +919,8 @@ namespace AcDotNetTool
         }
         #endregion
 
+        #region 分割曲线
+
         /// <summary>
         /// 分割曲线
         /// </summary>
@@ -857,12 +943,9 @@ namespace AcDotNetTool
                 source = source.Clone() as Polyline;
                 source.Closed = true;
             }
+            //分割点的顺序必须与起点方向一致，否则分割数量为1
+            var splitPoints = points.ToList<Point3d>().OrderBy(i => source.GetDistAtPoint(i)).Take(maxSplitNumber).ToCollection<Point3dCollection, Point3d>();
 
-            var splitPoints = new Point3dCollection();
-            for (int i = 0; i < points.Count && i < maxSplitNumber; i++)
-            {
-                splitPoints.Add(points[i]);
-            }
             var splitCurves = source.GetSplitCurves(splitPoints);
             var pls = splitCurves.ToList<Polyline>();
             foreach (var pl in pls)
@@ -876,17 +959,102 @@ namespace AcDotNetTool
             return pls;
         }
 
-        ///// <summary>
-        ///// 
-        ///// </summary>
-        ///// <param name="sources"></param>
-        ///// <param name="splitCurve"></param>
-        ///// <param name="maxSplitNumber"></param>
-        ///// <returns></returns>
-        //public static IEnumerable<IEnumerable<Polyline>> GetSplitCurves(this IEnumerable<Polyline> sources, Curve splitCurve,
-        //    int maxSplitNumber = 2)
-        //{
+        /// <summary>
+        /// 分割带有环岛的区域多段线，所有环岛应该在最外层多段线内
+        /// </summary>
+        /// <param name="sources">被分割区域多段线集合</param>
+        /// <param name="splitCurve">分割曲线</param>
+        /// <param name="maxSplitNumber">分割后的区域数量，当被分割曲线和分割曲线有超过2个交点时，可以被分割成超过2个区域</param>
+        /// <returns></returns>
+        public static IEnumerable<IEnumerable<Polyline>> GetSplitCurves(this IEnumerable<Polyline> sources, Curve splitCurve,
+            int maxSplitNumber = 2)
+        {
+            if (sources == null || sources.Count() == 0)
+            {
+                throw new ArgumentNullException("被分割区域不能为空");
+            }
+            sources = sources.Select(i =>
+            {
+                if (i.Closed == false)
+                {
+                    i = i.Clone() as Polyline;
+                    i.Closed = true;
+                }
+                return i;
+            }).OrderByDescending(i => i.Area);
+            var outLine = sources.First();
+            //分割最外层线
+            var splitOutLines = GetSplitCurves(outLine, splitCurve, maxSplitNumber);
 
-        //}
+            var resultTemp = splitOutLines.Select(i => new SplitCurvesTemp { OutLine = i }).ToList();
+            //如果有环岛，则要分割环岛，并把环岛分到对应分割后的外边线中
+            if (sources.Count() > 1)
+            {
+                var inLines = sources.Skip(1).ToList();
+                foreach (var inLine in inLines)
+                {
+                    var points = new Point3dCollection();
+                    inLine.IntersectWith(splitCurve, Intersect.OnBothOperands, points, IntPtr.Zero, IntPtr.Zero);
+                    //环岛需要分割，分割后在分别分配
+                    if (points.Count > 1)
+                    {
+                        var splitInLines = GetSplitCurves(inLine, splitCurve, points.Count);
+                        foreach (var splitInLine in splitInLines)
+                        {
+                            foreach (var splitOutLine in resultTemp)
+                            {
+                                //如果分割后的环岛在外围线内则合并区域
+                                if (IsInside(splitOutLine.OutLine, splitInLine))
+                                {
+                                    var inRegion = splitInLine.ToRegion();
+                                    var outRegion = splitOutLine.OutLine.ToRegion();
+                                    outRegion.BooleanOperation(BooleanOperationType.BoolSubtract, inRegion);
+                                    splitOutLine.OutLine = outRegion.ToPolyline();
+                                    outRegion.ColorIndex = 1;
+                                    DataBaseTools.AddIn(outRegion);
+                                    splitOutLine.OutLine.ColorIndex = 2;
+                                    DataBaseTools.AddIn(splitOutLine.OutLine);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    //环岛不需要分割，直接分配
+                    else
+                    {
+                        foreach (var splitOutLine in resultTemp)
+                        {
+                            if (IsInside(splitOutLine.OutLine, inLine))
+                            {
+                                splitOutLine.InLines.Add(inLine);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+            }
+
+            var result = resultTemp.Select(i =>
+            {
+                var ls = new List<Polyline> { i.OutLine };
+                ls.AddRange(i.InLines);
+                return ls;
+            });
+            return result;
+        }
+
+        #region 中间类型
+        /// <summary>
+        /// 分割带有环岛的区域多段线临时类型
+        /// </summary>
+        class SplitCurvesTemp
+        {
+            public Polyline OutLine { get; set; }
+            public IList<Polyline> InLines { get; set; } = new List<Polyline>();
+        }
+        #endregion
+
+        #endregion
     }
 }

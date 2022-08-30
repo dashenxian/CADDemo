@@ -27,8 +27,16 @@ namespace TestCADRegion
         {
             try
             {
-                var c1 = BaseTools.Select("选择被分割线") as Polyline;//Region;
-                if (c1 == null)
+                var c1 = BaseTools.Selects("选择被分割线");//Region;
+                var list = new List<Polyline>();
+                foreach (var entity in c1)
+                {
+                    if (entity is Polyline)
+                    {
+                        list.Add((Polyline)entity);
+                    }
+                }
+                if (!list.Any())
                 {
                     BaseTools.WriteMessage("选择错误");
                     return;
@@ -40,8 +48,8 @@ namespace TestCADRegion
                     return;
                 }
 
-                var pls = c1.GetSplitCurves(c2);
-                foreach (var curve in pls)
+                var pls = list.GetSplitCurves(c2);
+                foreach (var curve in pls.SelectMany(i => i))
                 {
                     DataBaseTools.AddIn(curve);
                 }
@@ -65,6 +73,20 @@ namespace TestCADRegion
             }
 
             //GC.Collect();
+        }
+
+        [CommandMethod("ToRegionToPolyLine")]
+        public void ToRegionToPolyLine()
+        {
+            var c1 = BaseTools.Select("请选择多段线") as Region;
+            if (c1==null)
+            {
+                BaseTools.WriteMessage("选择错误");
+                return;
+            }
+
+            var pl = c1.ToPolyline();
+            DataBaseTools.AddIn(pl);
         }
         private void Trim()
         {
