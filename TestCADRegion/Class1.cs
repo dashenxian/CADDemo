@@ -48,11 +48,25 @@ namespace TestCADRegion
                     return;
                 }
 
-                var pls = list.GetSplitCurves(c2);
-                foreach (var curve in pls.SelectMany(i => i))
+                var random = new Random();
+                foreach (var item in Enumerable.Range(0, 100))
                 {
-                    DataBaseTools.AddIn(curve);
+                    var percent = random.Next(5, 80) / 100.0;
+                    var pls = list.GetPersentsSplitCurves(c2, percent, 1000);
+                    if (pls == null)
+                    {
+                        BaseTools.WriteMessage("失败");
+                        return;
+                    }
                 }
+
+                //foreach (var curve in pls)
+                //{
+                //    if (curve.First().ObjectId == new ObjectId())
+                //    {
+                //        DataBaseTools.AddIn(curve.First());
+                //    }
+                //}
                 //var pl = c1.ToPolylines();
                 //foreach (var pl in pls)
                 //{
@@ -79,7 +93,7 @@ namespace TestCADRegion
         public void ToRegionToPolyLine()
         {
             var c1 = BaseTools.Select("请选择多段线") as Region;
-            if (c1==null)
+            if (c1 == null)
             {
                 BaseTools.WriteMessage("选择错误");
                 return;
@@ -87,6 +101,16 @@ namespace TestCADRegion
 
             var pl = c1.ToPolyline();
             DataBaseTools.AddIn(pl);
+        }
+
+        [CommandMethod("Test2")]
+        public void Test2()
+        {
+            var c1 = BaseTools.Select("选择线") as Line;
+            var v1 = c1.GetFirstDerivative(c1.Length);
+            var v2 = v1.GetPerpendicularVector();
+            var v3 = v2.GetNormal();
+            var v4 = v1.GetNormal();
         }
         private void Trim()
         {

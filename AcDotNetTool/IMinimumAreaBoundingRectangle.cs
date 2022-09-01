@@ -1,6 +1,22 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+
+
+#if ZWCAD
+using ZwSoft.ZwCAD.ApplicationServices;
+using ZwSoft.ZwCAD.DatabaseServices;
+using ZwSoft.ZwCAD.EditorInput;
+using ZwSoft.ZwCAD.Geometry;
+using ZwSoft.ZwCAD.Runtime;
+using Colors = ZwSoft.ZwCAD.Colors;
+#elif AutoCAD
+using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.Runtime;
+using Colors = Autodesk.AutoCAD.Colors;
+#endif
 
 namespace AcDotNetTool
 {
@@ -43,7 +59,51 @@ namespace AcDotNetTool
             {
                 point2ds.Add(item.ToPoint2d());
             }
+            var explodeDBObjectCollection = new DBObjectCollection();
+            curve.Explode(explodeDBObjectCollection);
+            var arcs = explodeDBObjectCollection.ToList<DBObject>().OfType<Arc>();
+            foreach (var arc in arcs)
+            {
+                point2ds.AddRange(GetArcMbrPoint(arc).ToPoint2d());
+            }
             return minimumAreaBoundingRectangle.GetMinimumAreaBoundingRectangle(point2ds);
+        }
+
+        private static IEnumerable<Point3d> GetArcMbrPoint(Arc arc)
+        {
+            var points = new List<Point3d>();
+            var pointLeft = new Point3d(arc.Center.X - arc.Radius, arc.Center.Y, 0);
+            if (arc.IsOnCurve(pointLeft))
+            {
+                points.Add(pointLeft);
+            }
+
+            var pointRight = new Point3d(arc.Center.X + arc.Radius, arc.Center.Y, 0);
+            if (arc.IsOnCurve(pointRight))
+            {
+                points.Add(pointRight);
+            }
+
+            var pointTop = new Point3d(arc.Center.X, arc.Center.Y + arc.Radius, 0);
+            if (arc.IsOnCurve(pointTop))
+            {
+                points.Add(pointTop);
+            }
+
+            var pointBottom = new Point3d(arc.Center.X, arc.Center.Y - arc.Radius, 0);
+            if (arc.IsOnCurve(pointBottom))
+            {
+                points.Add(pointBottom);
+            }
+
+            points.Add(arc.StartPoint);
+            points.Add(arc.EndPoint);
+            return points;
+        }
+
+        public static IMinimumAreaBoundingRectangle GetIMinimumAreaBoundingRectangle()
+        {
+            return new MinimumAreaBoundingRectangle();
         }
     }
 }
