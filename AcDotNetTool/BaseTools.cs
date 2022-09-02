@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using AcDotNetTool.Extensions;
 using System.Security.Cryptography;
@@ -140,18 +141,28 @@ namespace AcDotNetTool
         }
         #endregion
 
-        #region 带容差比较
+        #region 带容差比较    
         /// <summary>
-        /// 比较两个坐标点是否相同
+        /// 带容差比较比较两个坐标点是否相同
+        /// </summary>
+        /// <param name="point1">第1个坐标点</param>
+        /// <param name="point2">第2个坐标点</param>
+        /// <returns></returns>
+        public static bool Equal(this Point3d point1, Point3d point2, double tolerance)
+        {
+            return Math.Abs(point1.X - point2.X) < tolerance
+                   && Math.Abs(point1.Y - point2.Y) < tolerance
+                   && Math.Abs(point1.Z - point2.Z) < tolerance;
+        }
+        /// <summary>
+        /// 带容差比较比较两个坐标点是否相同
         /// </summary>
         /// <param name="point1">第1个坐标点</param>
         /// <param name="point2">第2个坐标点</param>
         /// <returns></returns>
         public static bool Equal(this Point3d point1, Point3d point2)
         {
-            return Math.Abs(point1.X - point2.X) < Tolerance.EqualPoint
-                   && Math.Abs(point1.Y - point2.Y) < Tolerance.EqualPoint
-                   && Math.Abs(point1.Z - point2.Z) < Tolerance.EqualPoint;
+            return Equal(point1, point2, Tolerance.EqualPoint);
         }
         /// <summary>
         /// 比较两个坐标点是否相同
@@ -244,6 +255,17 @@ namespace AcDotNetTool
                 return null;
             }
             var pl = polyline.Clone() as Polyline;
+            //修正多段线相邻点的坐标相同时删除第一个点,此方法会修改pl对象
+            for (int i = 0; i < pl.NumberOfVertices; i++)
+            {
+                var next = i == pl.NumberOfVertices - 1 ? 0 : i + 1;
+                var p1 = pl.GetPointAtParameter(i);
+                var p2 = pl.GetPointAtParameter(next);
+                if (p1 != p2 && p1.Equal(p2, 0.000001))
+                {
+                    pl.RemoveVertexAt(i);
+                }
+            }
             pl.Closed = true;
             var dBObjectCollection = new DBObjectCollection();
             dBObjectCollection.Add(pl);
@@ -987,7 +1009,7 @@ namespace AcDotNetTool
             sources = sources.OrderByDescending(i => i.Area).ToList();
             var mabrCal = MinimumAreaBoundingRectangleExtension.GetIMinimumAreaBoundingRectangle();
             var mabr = mabrCal.GetMinimumAreaBoundingRectangle(sources.First());
-            DataBaseTools.AddIn(mabr);
+            //DataBaseTools.AddIn(mabr);
             var points = new Point3dCollection();
             splitCurve.IntersectWith(mabr, Intersect.ExtendBoth, points, IntPtr.Zero, IntPtr.Zero);
             if (points.Count < 2)
@@ -1015,17 +1037,15 @@ namespace AcDotNetTool
             //分割前总面积
             var totalArea = sources.Max(i => i.Area) * 2 - sources.Sum(i => i.Area);
             //上一次分割的比例
-            var lastPersent = 0d;
-            //分割线每次移动方向
-            var direction = 1;
-            var distance = normalLine.Length * expectPersent;
-            var step = distance / 2;
+            var left = 0d;
+            var right = normalLine.Length;
+            var mid = (left + right) / 2;
             while (index++ < maxTrialCount)
             {
-                var movePoint = normalLine.GetPointAtDist(distance);
+                var movePoint = normalLine.GetPointAtDist(mid);
                 splitXLine.Move(splitXLine.BasePoint, movePoint);
                 //var cl = splitXLine.Clone() as Xline;
-                //if (index == maxTrialCount)
+                //if (index == 23)
                 //{
                 //    cl.ColorIndex = index;
                 //    DataBaseTools.AddIn(cl);
@@ -1040,22 +1060,20 @@ namespace AcDotNetTool
                     {
                         return plss;
                     }
-                    if (persent1 > expectPersent && persent1 > lastPersent || persent1 < expectPersent && persent1 < lastPersent)
+                    if (Math.Min(persent1, persent2) > expectPersent && expectPersent <= 0.5 || Math.Max(persent1, persent2) < expectPersent && expectPersent > 0.5)
                     {
-                        direction = -direction;
-                        step /= 2 * direction;
+                        left = mid;
                     }
-                    lastPersent = persent1;
+                    else
+                    {
+                        right = mid;
+                    }
+                    //WriteMessage(persent1.ToString() + "\r\n");
                 }
-
-                //WriteMessage(lastPersent.ToString() + "\r\n");
-                if (distance+step>normalLine.Length||distance+step<0)
-                {
-                    step = -step;
-                }
-                distance = distance + step;
+                mid = (left + right) / 2;
+                //WriteMessage($"mid:{mid};left:{left};right:{right}\r\n");
             }
-            WriteMessage(index.ToString() + "\r\n");
+            //WriteMessage(index.ToString() + "\r\n");
             return null;
             throw new System.Exception("无法分割出指定的图形");
         }
@@ -1179,7 +1197,7 @@ namespace AcDotNetTool
                 var ls = new List<Polyline> { i.OutLine };
                 ls.AddRange(i.InLines);
                 return ls;
-            });
+            }).ToList();
             return result;
         }
 

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using AcDotNetTool;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using AcDotNetTool.Extensions;
 #if ZWCAD
@@ -49,17 +50,40 @@ namespace TestCADRegion
                 }
 
                 var random = new Random();
-                foreach (var item in Enumerable.Range(0, 100))
+                var sw =Stopwatch.StartNew();
+                var errCount = 0;
+                var successCount = 0;
+                foreach (var item in Enumerable.Range(0, 10))
                 {
                     var percent = random.Next(5, 80) / 100.0;
-                    var pls = list.GetPersentsSplitCurves(c2, percent, 1000);
-                    if (pls == null)
+                    try
                     {
-                        BaseTools.WriteMessage("失败");
-                        return;
+                        var pls = list.GetPersentsSplitCurves(c2, percent, 100);
+                        if (pls == null)
+                        {
+                            errCount++;
+                            BaseTools.WriteMessage($"失败,比例:{percent}\r\n");
+                            continue;
+                        }
                     }
-                }
+                    catch (System.Exception)
+                    {
+                        errCount++;
+                        BaseTools.WriteMessage($"失败,比例:{percent}\r\n");
+                    }
 
+                    successCount++; 
+                    BaseTools.WriteMessage($"成功,比例:{percent}\r\n");
+                    //foreach (var curve in pls)
+                    //{
+                    //    if (curve.First().ObjectId == new ObjectId())
+                    //    {
+                    //        DataBaseTools.AddIn(curve.First());
+                    //    }
+                    //}
+                }
+                sw.Stop();
+                BaseTools.WriteMessage($"耗时:{sw.ElapsedMilliseconds},成功数量:{successCount},失败数量：{errCount}");
                 //foreach (var curve in pls)
                 //{
                 //    if (curve.First().ObjectId == new ObjectId())
