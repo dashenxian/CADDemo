@@ -35,5 +35,14 @@ namespace AcDotNetTool.Extensions
             var avg = values.Average();
             return values.Sum(x => Math.Pow(x - avg, 2)) / values.Count();
         }
+        /// <summary>
+        /// 交换两个数
+        /// </summary>
+        /// <param name="value1"></param>
+        /// <param name="value2"></param>
+        public static void SwapNumber(ref double value1, ref double value2)
+        {
+            (value1, value2) = (value2, value1);
+        }
     }
 }

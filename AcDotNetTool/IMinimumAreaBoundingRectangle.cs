@@ -65,7 +65,9 @@ namespace AcDotNetTool
             foreach (var arc in arcs)
             {
                 point2ds.AddRange(GetArcMbrPoint(arc).ToPoint2d());
+                arc.Dispose();
             }
+            explodeDBObjectCollection.Dispose();
             return minimumAreaBoundingRectangle.GetMinimumAreaBoundingRectangle(point2ds);
         }
 

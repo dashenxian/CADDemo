@@ -270,6 +270,8 @@ namespace AcDotNetTool
             var dBObjectCollection = new DBObjectCollection();
             dBObjectCollection.Add(pl);
             var reg = Region.CreateFromCurves(dBObjectCollection)[0] as Region;
+            dBObjectCollection.Dispose();
+            pl.Dispose();
             return reg;
         }
 
@@ -319,12 +321,12 @@ namespace AcDotNetTool
                 {
                     var arc = Arc.CreateFromGeCurve(eCurve.NativeCurve) as Arc;
                     bulge = GetBulge(arc) * isReverse;
+                    arc.Dispose();
                 }
                 else
                 {
                     bulge = 0;
                 }
-
                 if (bulge != 0 || list.Count == 0)
                 {
                     if (list.Count != 0)
@@ -336,6 +338,7 @@ namespace AcDotNetTool
 
                 list.Add(new PolylinePoint { Point2d = endPoint.Value.ToPoint2d(), Bulge = 0 });
 
+                curEdge.Dispose();
             } while (true);
             //重新绘制多段线
             foreach (var polylinePoint in list)
@@ -641,9 +644,11 @@ namespace AcDotNetTool
                 {
                     if (!IsInside(outLine, line))
                     {
+                        line.Dispose();
                         return false;
                     }
                 }
+                lines.Dispose();
                 return true;
             }
 
@@ -658,8 +663,10 @@ namespace AcDotNetTool
 
             var inRegArea = inReg.Area;
             outReg.BooleanOperation(BooleanOperationType.BoolIntersect, inReg);
-
-            return Math.Abs(outReg.Area - inRegArea) < tolerance;
+            var result = Math.Abs(outReg.Area - inRegArea) < tolerance;
+            inReg.Dispose();
+            outReg.Dispose();
+            return result;
         }
         /// <summary>
         /// 判断点是否在曲线范围内
@@ -696,12 +703,15 @@ namespace AcDotNetTool
             ray.BasePoint = point.ToPoint3d();
             ray.UnitDir = new Vector3d(1, 0, 0);
             Point3dCollection points = new Point3dCollection();
-            ray.IntersectWith(outL, Intersect.OnBothOperands, points, 0, 0);
+            ray.IntersectWith(outL, Intersect.OnBothOperands, points, IntPtr.Zero, IntPtr.Zero);
             if (points.Count % 2 == 1)
             {
                 return true;
             }
 
+            points.Dispose();
+            ray.Dispose();
+            outL.Dispose();
             return false;
         }
         /// <summary>
@@ -763,6 +773,39 @@ namespace AcDotNetTool
                 }
             }
             return true;
+        }
+        /// <summary>
+        /// 判断点在范围内
+        /// </summary>
+        /// <param name="outExtent">范围</param>
+        /// <param name="point">点</param>
+        /// <returns></returns>
+        public static bool IsInside(Extents3d outExtent, Point3d point)
+        {
+
+            return IsInside(outExtent, point, Tolerance.EqualPoint);
+        }
+        /// <summary>
+        /// 判断点在范围内
+        /// </summary>
+        /// <param name="outExtent">范围</param>
+        /// <param name="point">点</param>
+        /// <param name="tolerance"></param>
+        /// <returns></returns>
+        public static bool IsInside(Extents3d outExtent, Point3d point, double tolerance)
+        {
+            if (outExtent.MaxPoint.X + tolerance > point.X
+                && outExtent.MaxPoint.Y + tolerance > point.Y
+                && outExtent.MaxPoint.Z + tolerance > point.Z
+                && outExtent.MinPoint.X - tolerance < point.X
+                && outExtent.MinPoint.Y - tolerance < point.Y
+                && outExtent.MinPoint.Z - tolerance < point.Z
+               )
+            {
+                return true;
+            }
+
+            return false;
         }
         #endregion
 
@@ -989,7 +1032,20 @@ namespace AcDotNetTool
             var line = new Line(splitCurve.StartPoint, splitCurve.EndPoint);
             return GetPersentsSplitCurves(sources, line, expectPersent, maxTrialCount);
         }
-
+        /// <summary>
+        /// 按面积比例分割曲线成两份,速度慢一倍，适应性更高
+        /// </summary>
+        /// <param name="sources">被分割区域多段线集合,多条曲线中第一条为外边框线，其余为环岛，没有环岛时只有一条线</param>
+        /// <param name="splitCurve">分割趋势线</param>
+        /// <param name="expectPersent">第一份曲线面积占比,小数表示的百分比，如0.5代表占总面积50%</param>
+        /// <param name="maxTrialCount">最多尝试分割次数</param>
+        /// <returns></returns>
+        public static IEnumerable<IEnumerable<Polyline>> GetPersentsSplitCurvesSlow(this IEnumerable<Polyline> sources,
+            Polyline splitCurve, double expectPersent, int maxTrialCount = 1000)
+        {
+            var line = new Line(splitCurve.StartPoint, splitCurve.EndPoint);
+            return GetPersentsSplitCurvesSlow(sources, line, expectPersent, maxTrialCount);
+        }
 
         /// <summary>
         /// 按面积比例分割曲线成两份
@@ -1000,6 +1056,100 @@ namespace AcDotNetTool
         /// <param name="maxTrialCount">最多尝试分割次数</param>
         /// <returns></returns>
         public static IEnumerable<IEnumerable<Polyline>> GetPersentsSplitCurves(this IEnumerable<Polyline> sources, Line splitCurve, double expectPersent, int maxTrialCount = 1000)
+        {
+            if (sources == null || !sources.Any())
+            {
+                throw new ArgumentNullException(nameof(sources), "被分割曲线不能为空。");
+            }
+
+            sources = sources.OrderByDescending(i => i.Area).ToList();
+            var mabrCal = MinimumAreaBoundingRectangleExtension.GetIMinimumAreaBoundingRectangle();
+            var mabr = mabrCal.GetMinimumAreaBoundingRectangle(sources.First());
+            //DataBaseTools.AddIn(mabr);
+            var points = new Point3dCollection();
+            splitCurve.IntersectWith(mabr, Intersect.ExtendBoth, points, IntPtr.Zero, IntPtr.Zero);
+            if (points.Count < 2)
+            {
+                throw new ArgumentException("分割趋势线与被分割曲线的最小外包矩形交点少于2个，无法计算分割。");
+            }
+            //计算分割趋势线的法向量方向作为分割面积微调的方向
+            var normalVecotr = splitCurve.GetFirstDerivative(splitCurve.Length / 2).GetPerpendicularVector().GetNormal();
+            var normalXLine = new Xline();
+            normalXLine.BasePoint = GetCenterPoint(points[0], points[1]);
+            normalXLine.UnitDir = normalVecotr;
+            var normalPoints = new Point3dCollection();
+            normalXLine.IntersectWith(mabr, Intersect.ExtendBoth, normalPoints, IntPtr.Zero, IntPtr.Zero);
+            normalXLine.Dispose();
+            //DataBaseTools.AddIn(normalXLine);
+            if (normalPoints.Count < 2)
+            {
+                throw new System.Exception("计算趋势的法线与被分割曲线的最小外包矩形交点少于2个，无法计算分割。");
+            }
+            var normalLine = new Line(normalPoints[0], normalPoints[1]);
+            //把分割线改成射线，否则移动分割线是可能不会相接
+            var splitXLine = new Xline();
+            splitXLine.BasePoint = GetCenterPoint(points[0], points[1]);
+            splitXLine.SecondPoint = points[1];
+            var index = 0;
+            //分割前总面积
+            var totalArea = sources.Max(i => i.Area) * 2 - sources.Sum(i => i.Area);
+            //上一次分割的比例
+            var left = 0d;
+            var right = normalLine.Length;
+            var mid = (left + right) / 2;
+            while (index++ < maxTrialCount)
+            {
+                var movePoint = normalLine.GetPointAtDist(mid);
+                splitXLine.Move(splitXLine.BasePoint, movePoint);
+                //var cl = splitXLine.Clone() as Xline;
+                //if (index == 23)
+                //{
+                //    cl.ColorIndex = index;
+                //    DataBaseTools.AddIn(cl);
+                //}
+
+                var plss = GetSplitCurves(sources, splitXLine).ToList();
+                if (plss.Count == 2)
+                {
+                    var persent1 = (plss[0].Max(i => i.Area) * 2 - plss[0].Sum(i => i.Area)) / totalArea;
+                    var persent2 = 1 - persent1;
+
+                    if (persent1.Equals(expectPersent, Tolerance.EqualPoint) || persent2.Equals(expectPersent, Tolerance.EqualPoint))
+                    {
+                        return plss;
+                    }
+                    var bounds = plss[0].OrderByDescending(i => i.Area).FirstOrDefault()?.Bounds;
+                    if (bounds != null && !IsInside(bounds.Value, normalLine.StartPoint))
+                    {
+                        NumberExtensions.SwapNumber(ref persent1, ref persent2);
+                    }
+                    if (persent1 < expectPersent)
+                    {
+                        left = mid;
+                    }
+                    else
+                    {
+                        right = mid;
+                    }
+                    //WriteMessage(persent1.ToString() + "\r\n");
+                }
+                mid = (left + right) / 2;
+                //WriteMessage($"mid:{mid};left:{left};right:{right}\r\n");
+            }
+            //WriteMessage(index.ToString() + "\r\n");
+            return null;
+            throw new System.Exception("无法分割出指定的图形");
+        }
+
+        /// <summary>
+        /// 按面积比例分割曲线成两份,速度慢一倍，适应性更高
+        /// </summary>
+        /// <param name="sources">被分割区域多段线集合,多条曲线中第一条为外边框线，其余为环岛，没有环岛时只有一条线</param>
+        /// <param name="splitCurve">分割趋势线</param>
+        /// <param name="expectPersent">第一份曲线面积占比,小数表示的百分比，如0.5代表占总面积50%</param>
+        /// <param name="maxTrialCount">最多尝试分割次数</param>
+        /// <returns></returns>
+        public static IEnumerable<IEnumerable<Polyline>> GetPersentsSplitCurvesSlow(this IEnumerable<Polyline> sources, Line splitCurve, double expectPersent, int maxTrialCount = 1000)
         {
             if (sources == null || !sources.Any())
             {
@@ -1037,15 +1187,17 @@ namespace AcDotNetTool
             //分割前总面积
             var totalArea = sources.Max(i => i.Area) * 2 - sources.Sum(i => i.Area);
             //上一次分割的比例
-            var left = 0d;
-            var right = normalLine.Length;
-            var mid = (left + right) / 2;
+            var lastPersent = 0d;
+            //分割线每次移动方向
+            var direction = 1;
+            var distance = normalLine.Length * expectPersent;
+            var step = distance / 2;
             while (index++ < maxTrialCount)
             {
-                var movePoint = normalLine.GetPointAtDist(mid);
+                var movePoint = normalLine.GetPointAtDist(distance);
                 splitXLine.Move(splitXLine.BasePoint, movePoint);
                 //var cl = splitXLine.Clone() as Xline;
-                //if (index == 23)
+                //if (index == maxTrialCount)
                 //{
                 //    cl.ColorIndex = index;
                 //    DataBaseTools.AddIn(cl);
@@ -1058,22 +1210,26 @@ namespace AcDotNetTool
                     var persent2 = 1 - persent1;
                     if (persent1.Equals(expectPersent, Tolerance.EqualPoint) || persent2.Equals(expectPersent, Tolerance.EqualPoint))
                     {
+                        splitXLine.Dispose();
                         return plss;
                     }
-                    if (Math.Min(persent1, persent2) > expectPersent && expectPersent <= 0.5 || Math.Max(persent1, persent2) < expectPersent && expectPersent > 0.5)
+                    if (persent1 > expectPersent && persent1 > lastPersent || persent1 < expectPersent && persent1 < lastPersent)
                     {
-                        left = mid;
+                        direction = -direction;
+                        step /= 2 * direction;
                     }
-                    else
-                    {
-                        right = mid;
-                    }
-                    //WriteMessage(persent1.ToString() + "\r\n");
+                    lastPersent = persent1;
                 }
-                mid = (left + right) / 2;
-                //WriteMessage($"mid:{mid};left:{left};right:{right}\r\n");
+
+                //WriteMessage(lastPersent.ToString() + "\r\n");
+                if (distance + step > normalLine.Length || distance + step < 0)
+                {
+                    step = -step;
+                }
+                distance = distance + step;
             }
             //WriteMessage(index.ToString() + "\r\n");
+            splitXLine.Dispose();
             return null;
             throw new System.Exception("无法分割出指定的图形");
         }
@@ -1086,24 +1242,23 @@ namespace AcDotNetTool
         /// <param name="maxSplitNumber">分割后的区域数量，当被分割曲线和分割曲线有超过2个交点时，可以被分割成超过2个区域</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public static IEnumerable<Polyline> GetSplitCurves(this Polyline source, Curve splitCurve, int maxSplitNumber = 2)
+        public static IEnumerable<Polyline> GetSplitCurves(this Polyline source1, Curve splitCurve, int maxSplitNumber = 2)
         {
             var points = new Point3dCollection();
-            source.IntersectWith(splitCurve, Intersect.ExtendBoth, points, IntPtr.Zero, IntPtr.Zero);
+            source1.IntersectWith(splitCurve, Intersect.ExtendBoth, points, IntPtr.Zero, IntPtr.Zero);
             if (points.Count < 2)
             {
                 throw new ArgumentException("分割曲线与原曲线的交点少于2个，无法分割");
             }
 
-            if (!source.Closed)
-            {
-                source = source.Clone() as Polyline;
-                source.Closed = true;
-            }
+            var source = source1.Clone() as Polyline;
+            source.Closed = true;
+
             //分割点的顺序必须与起点方向一致，否则分割数量为1
             var splitPoints = points.ToList<Point3d>().OrderBy(i => source.GetDistAtPoint(i)).Take(maxSplitNumber).ToCollection<Point3dCollection, Point3d>();
-
+            points.Dispose();
             var splitCurves = source.GetSplitCurves(splitPoints);
+            splitPoints.Dispose();
             var pls = splitCurves.ToList<Polyline>();
             foreach (var pl in pls)
             {
@@ -1113,6 +1268,7 @@ namespace AcDotNetTool
                 }
                 pl.Closed = true;
             }
+            source.Dispose();
             return pls;
         }
 
@@ -1167,13 +1323,12 @@ namespace AcDotNetTool
                                     var outRegion = splitOutLine.OutLine.ToRegion();
                                     outRegion.BooleanOperation(BooleanOperationType.BoolSubtract, inRegion);
                                     splitOutLine.OutLine = outRegion.ToPolyline();
-                                    //outRegion.ColorIndex = 1;
-                                    //DataBaseTools.AddIn(outRegion);
-                                    //splitOutLine.OutLine.ColorIndex = 2;
-                                    //DataBaseTools.AddIn(splitOutLine.OutLine);
+                                    inRegion.Dispose();
+                                    outRegion.Dispose();
                                     break;
                                 }
                             }
+                            splitInLine.Dispose();
                         }
                     }
                     //环岛不需要分割，直接分配

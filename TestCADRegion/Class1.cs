@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using AcDotNetTool;
@@ -28,82 +29,26 @@ namespace TestCADRegion
         {
             try
             {
-                var c1 = BaseTools.Selects("选择被分割线");//Region;
-                var list = new List<Polyline>();
-                foreach (var entity in c1)
+                var outPut = @"C:\Users\Administrator\Desktop\新建文件夹";
+                Document doc = Application.DocumentManager.MdiActiveDocument;
+                Database db = doc.Database;
+                var layouts = new List<Layout>();
+                using (Transaction trans = db.TransactionManager.StartTransaction())
                 {
-                    if (entity is Polyline)
+                    var dic = trans.GetObject(db.LayoutDictionaryId, OpenMode.ForWrite) as DBDictionary;
+                    foreach (var item in dic)
                     {
-                        list.Add((Polyline)entity);
+                        var layout = trans.GetObject(item.Value, OpenMode.ForWrite) as Layout;
+                        var acplSetVdr = PlotSettingsValidator.Current;
+                        //acplSetVdr.SetPlotType(layout, PlotType.Layout);
+                        acplSetVdr.RefreshLists(layout);
+                        acplSetVdr.SetPlotConfigurationName(layout, "DWG To PDF.pc3", "ISO_full_bleed_A4_(210.00_x_297.00_MM)");
+                        layouts.Add(layout);
                     }
+                    trans.Commit();
                 }
-                if (!list.Any())
-                {
-                    BaseTools.WriteMessage("选择错误");
-                    return;
-                }
-                var c2 = BaseTools.Select("选择分割线") as Polyline;//Region;
-                if (c2 == null)
-                {
-                    BaseTools.WriteMessage("选择错误");
-                    return;
-                }
-
-                var random = new Random();
-                var sw =Stopwatch.StartNew();
-                var errCount = 0;
-                var successCount = 0;
-                foreach (var item in Enumerable.Range(0, 10))
-                {
-                    var percent = random.Next(5, 80) / 100.0;
-                    try
-                    {
-                        var pls = list.GetPersentsSplitCurves(c2, percent, 100);
-                        if (pls == null)
-                        {
-                            errCount++;
-                            BaseTools.WriteMessage($"失败,比例:{percent}\r\n");
-                            continue;
-                        }
-                    }
-                    catch (System.Exception)
-                    {
-                        errCount++;
-                        BaseTools.WriteMessage($"失败,比例:{percent}\r\n");
-                    }
-
-                    successCount++; 
-                    BaseTools.WriteMessage($"成功,比例:{percent}\r\n");
-                    //foreach (var curve in pls)
-                    //{
-                    //    if (curve.First().ObjectId == new ObjectId())
-                    //    {
-                    //        DataBaseTools.AddIn(curve.First());
-                    //    }
-                    //}
-                }
-                sw.Stop();
-                BaseTools.WriteMessage($"耗时:{sw.ElapsedMilliseconds},成功数量:{successCount},失败数量：{errCount}");
-                //foreach (var curve in pls)
-                //{
-                //    if (curve.First().ObjectId == new ObjectId())
-                //    {
-                //        DataBaseTools.AddIn(curve.First());
-                //    }
-                //}
-                //var pl = c1.ToPolylines();
-                //foreach (var pl in pls)
-                //{
-                //    for (int i = 0; i < pl.NumberOfVertices; i++)
-                //    {
-                //        var p = pl.GetPointAtParameter(i);
-                //        BaseTools.WriteMessage($"{p.X},{p.Y},{p.Z}\n");
-                //    }
-                //}
-                //IMinimumAreaBoundingRectangle mabr = new MinimumAreaBoundingRectangle();
-                //var pl = mabr.GetMinimumAreaBoundingRectangle(c1);
-
-
+                var multiSheetsPdf = new SingleSheetPdf(outPut, layouts);
+                multiSheetsPdf.Publish();
             }
             catch (System.Exception e)
             {
@@ -116,14 +61,14 @@ namespace TestCADRegion
         [CommandMethod("ToRegionToPolyLine")]
         public void ToRegionToPolyLine()
         {
-            var c1 = BaseTools.Select("请选择多段线") as Region;
+            var c1 = BaseTools.Select("请选择多段线") as Polyline;
             if (c1 == null)
             {
                 BaseTools.WriteMessage("选择错误");
                 return;
             }
 
-            var pl = c1.ToPolyline();
+            var pl = c1.ToRegion();
             DataBaseTools.AddIn(pl);
         }
 
