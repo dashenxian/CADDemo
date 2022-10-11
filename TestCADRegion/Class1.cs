@@ -23,9 +23,11 @@ namespace TestCADRegion
 {
     public class Class1
     {
-
         [CommandMethod("Test")]
-        public void Test()
+        public void Test() { }
+
+        [CommandMethod("TestPrint")]
+        public void TestPrint()
         {
             try
             {
