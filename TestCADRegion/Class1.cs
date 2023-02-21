@@ -24,7 +24,22 @@ namespace TestCADRegion
     public class Class1
     {
         [CommandMethod("Test")]
-        public void Test() { }
+        public void Test()
+        {
+
+            var doc = Application.DocumentManager.MdiActiveDocument;
+            using (var trans = doc.TransactionManager.StartTransaction())
+            {
+                var select = BaseTools.Select("选择线") as Polyline;
+                if (select == null)
+                {
+                    return;
+                }
+                select.ConstantWidth = 0.5;
+                trans.Commit();
+            }
+
+        }
 
         [CommandMethod("TestPrint")]
         public void TestPrint()

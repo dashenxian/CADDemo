@@ -83,4 +83,5 @@
 			<Private>False</Private>
 		</Reference>
 	</ItemGroup>
+	<ProjectExtensions><VisualStudio><UserProperties BuildVersion_BuildVersioningStyle="" BuildVersion_StartDate="2000/1/1" BuildVersion_UpdateAssemblyVersion="True" BuildVersion_UpdateFileVersion="True" BuildVersion_UseGlobalSettings="True" /></VisualStudio></ProjectExtensions>
 </Project>
