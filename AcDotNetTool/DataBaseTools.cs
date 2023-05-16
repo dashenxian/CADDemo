@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 #if ZWCAD
 using ZwSoft.ZwCAD.ApplicationServices;
@@ -164,7 +165,100 @@ namespace AcDotNetTool
 
 
         #region 数据库克隆
+        /// <summary>
+        /// 克隆数据库对象
+        /// </summary>
+        /// <param name="objs">被克隆的对象</param>
+        /// <param name="newDatabase">克隆的数据库</param>
+        /// <returns>返回克隆对象的id关联(原id,新id)</returns>
+        public static Dictionary<long, long> Clone(DBObjectCollection objs, Database newDatabase)
+        {
+            var idCollection = new ObjectIdCollection();
+            var handleObjectIdDic = new Dictionary<long, ObjectId>();
 
+            foreach (DBObject obj in objs)
+            {
+                var objectId = obj.Id;
+                idCollection.Add(objectId);
+                handleObjectIdDic[obj.Handle.Value] = objectId;
+            }
+
+
+            var result = new Dictionary<long, long>();
+            var dic = Clone(idCollection, newDatabase);
+            using (var trans = newDatabase.TransactionManager.StartTransaction())
+            {
+                foreach (KeyValuePair<ObjectId, ObjectId> keyValuePair in dic)
+                {
+                    var obj = trans.GetObject(keyValuePair.Value, OpenMode.ForRead);
+                    var newHandle = obj.Handle.Value;
+                    var oldHandle = handleObjectIdDic.First(x => x.Value == keyValuePair.Key).Key;
+                    result[oldHandle] = newHandle;
+                }
+            }
+            return result;
+        }
+        /// <summary>
+        /// 克隆数据库对象
+        /// </summary>
+        /// <param name="handles">被克隆的对象</param>
+        /// <param name="oldDatabase">被克隆数据库</param>
+        /// <param name="newDatabase">克隆的数据库</param>
+        /// <returns>返回克隆对象的id关联(原id,新id)</returns>
+        public static Dictionary<long, long> Clone(IEnumerable<long> handles, Database oldDatabase, Database newDatabase)
+        {
+            var idCollection = new ObjectIdCollection();
+            var handleObjectIdDic = new Dictionary<long, ObjectId>();
+            using (var trans = oldDatabase.TransactionManager.StartTransaction())
+            {
+                foreach (var handle in handles)
+                {
+                    var objectId = oldDatabase.GetObjectId(false, new Handle(handle), 0);
+                    idCollection.Add(objectId);
+                    handleObjectIdDic[handle] = objectId;
+                }
+            }
+
+            var result = new Dictionary<long, long>();
+            var dic = Clone(idCollection, newDatabase);
+            using (var trans = newDatabase.TransactionManager.StartTransaction())
+            {
+                foreach (KeyValuePair<ObjectId, ObjectId> keyValuePair in dic)
+                {
+                    var obj = trans.GetObject(keyValuePair.Value, OpenMode.ForRead);
+                    var newHandle = obj.Handle.Value;
+                    var oldHandle = handleObjectIdDic.First(x => x.Value == keyValuePair.Key).Key;
+                    result[oldHandle] = newHandle;
+                }
+            }
+            return result;
+        }
+        /// <summary>
+        /// 克隆数据库对象
+        /// </summary>
+        /// <param name="idCollection">被克隆的对象</param>
+        /// <param name="newDatabase">克隆的数据库</param>
+        /// <returns>返回克隆对象的id关联(原id,新id)</returns>
+        public static Dictionary<ObjectId, ObjectId> Clone(ObjectIdCollection idCollection, Database newDatabase)
+        {
+            ObjectId idBtr;
+            var db = idCollection[0].Database;
+            var map = new IdMapping();
+            using (var trans = newDatabase.TransactionManager.StartTransaction())
+            {
+                var bt = (BlockTable)trans.GetObject(newDatabase.BlockTableId, OpenMode.ForRead);
+                var btr = (BlockTableRecord)trans.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+                idBtr = btr.ObjectId;
+                trans.Commit();
+            }
+            var dic = new Dictionary<ObjectId, ObjectId>();
+            db.WblockCloneObjects(idCollection, idBtr, map, DuplicateRecordCloning.Replace, false);
+            foreach (ObjectId id in idCollection)
+            {
+                dic[id] = map[id].Value;
+            }
+            return dic;
+        }
         /// <summary>
         /// 数据库克隆
         /// </summary>
@@ -172,22 +266,8 @@ namespace AcDotNetTool
         /// <param name="fileName">克隆到的文件名</param>
         public static void Clone(ObjectIdCollection idCollection, string fileName)
         {
-            Database ndb = new Database(true, true);
-            ObjectId IdBtr = new ObjectId();
-            Database db = idCollection[0].Database;
-            IdMapping map = new IdMapping();
-            using (Transaction trans = ndb.TransactionManager.StartTransaction())
-            {
-                BlockTable bt = (BlockTable)trans.GetObject(ndb.BlockTableId, OpenMode.ForRead);
-
-
-                BlockTableRecord btr =
-                    (BlockTableRecord)trans.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
-                IdBtr = btr.ObjectId;
-                trans.Commit();
-            }
-
-            db.WblockCloneObjects(idCollection, IdBtr, map, DuplicateRecordCloning.Replace, false);
+            var ndb = new Database(true, true);
+            Clone(idCollection, ndb);
             ndb.SaveAs(fileName, DwgVersion.Current);
         }
         #endregion
@@ -346,6 +426,41 @@ namespace AcDotNetTool
             }
 
             return entId;
+        }
+        /// <summary>
+        /// 将一个图形对象加入到指定的Database的模型空间
+        /// </summary>
+        /// <param name="ents">实体对象</param>
+        /// <returns></returns>
+        public static IEnumerable<ObjectId> AddToModelSpace(this IEnumerable<Entity> ents)
+        {
+            return AddToModelSpace(ents, DocumentDatabase());
+        }
+        /// <summary>
+        /// 将一个图形对象加入到指定的Database的模型空间
+        /// </summary>
+        /// <param name="ents">实体对象</param>
+        /// <param name="db">数据库</param>
+        /// <returns></returns>
+        public static IEnumerable<ObjectId> AddToModelSpace(this IEnumerable<Entity> ents, Database db)
+        {
+            var entIds = new List<ObjectId>();
+            using (Transaction trans = db.TransactionManager.StartTransaction())
+            {
+                foreach (var ent in ents)
+                {
+                    BlockTable bt = (BlockTable)trans.GetObject(db.BlockTableId, OpenMode.ForRead);
+                    BlockTableRecord btr =
+                        (BlockTableRecord)trans.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+                    var entId = btr.AppendEntity(ent);
+                    entIds.Add(entId);
+                    trans.AddNewlyCreatedDBObject(ent, true);
+                }
+
+                trans.Commit();
+            }
+
+            return entIds;
         }
         /// <summary>
         /// 将一组图形对象加入到指定的Database的模型空间

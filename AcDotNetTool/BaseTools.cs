@@ -23,6 +23,7 @@ using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.BoundaryRepresentation;
 #endif
 
+// ReSharper disable PossibleMultipleEnumeration
 namespace AcDotNetTool
 {
     /// <summary>
@@ -862,7 +863,7 @@ namespace AcDotNetTool
         /// </summary>
         /// <param name="pl"></param>
         /// <param name="widths"></param>
-        public static void Offset(this Polyline pl, IEnumerable<double> widths)
+        public static Polyline Offset(this Polyline pl, IEnumerable<double> widths)
         {
             //是否逆时针
             var iscw = pl.IsCCW();
@@ -879,7 +880,7 @@ namespace AcDotNetTool
             for (int i = 0; i < objs.Count; i++)
             {
                 var obj = objs[i];
-                var preIndex = i - 1 < 0 ? objs.Count : i - 1;
+                var preIndex = i - 1 < 0 ? objs.Count - 1 : i - 1;
                 var preDist = widthList[preIndex];
                 var dist = widthList[i];
                 var line = obj as Curve;
@@ -916,14 +917,15 @@ namespace AcDotNetTool
             if (lines.Count == 0)
             {
                 BaseTools.WriteMessage("没有找到偏移的多段线");
-                return;
+                throw new ArgumentException("没有找到偏移的多段线");
             }
             TrimCurve(lines);
             ExtendIntersect(lines, iscw);
-            var newPl = new Polyline();
-            newPl.JoinEntities(lines.ToArray());
+            //var newPl = new Polyline();
+            //newPl.JoinEntities(lines.ToArray());
             var region = Region.CreateFromCurves(lines.ToDBObjectCollection());
-            throw new NotImplementedException("返回数据还没实现");
+            var polyline = (region[0] as Region).ToPolyline();
+            return polyline;
         }
 
         /// <summary>
@@ -980,10 +982,10 @@ namespace AcDotNetTool
                     var nextMiddlePoint = lines[nextIndex].GetPointAtDist(nextLength / 2);
                     foreach (Point3d point3d in nextPoints)
                     {
-                        if (nextPoint.X < Math.Max(nextMiddlePoint.X, middlePoint.X)
-                            && nextPoint.X > Math.Min(nextMiddlePoint.X, middlePoint.X)
-                            && nextPoint.Y < Math.Max(nextMiddlePoint.Y, middlePoint.Y)
-                            && nextPoint.Y > Math.Min(nextMiddlePoint.Y, middlePoint.Y)
+                        if (nextPoint.X < Math.Max(nextMiddlePoint.X, middlePoint.X) + Tolerance.EqualVector
+                            && nextPoint.X > Math.Min(nextMiddlePoint.X, middlePoint.X) - Tolerance.EqualVector
+                            && nextPoint.Y < Math.Max(nextMiddlePoint.Y, middlePoint.Y) + Tolerance.EqualVector
+                            && nextPoint.Y > Math.Min(nextMiddlePoint.Y, middlePoint.Y) - Tolerance.EqualVector
                            )
                         {
                             break;
@@ -1009,14 +1011,59 @@ namespace AcDotNetTool
                 }
                 else
                 {
-                    lines[i].Extend(true, prePoint);
-                    lines[i].Extend(false, nextPoint);
+                    lines[i].StartPoint = prePoint;
+                    lines[i].EndPoint = nextPoint;
                 }
             }
         }
         #endregion
 
         #region 分割曲线
+        /// <summary>
+        /// 在一个AutoCAD图形中有n条曲线Curve，其中包含Line,Polyline类型的线段,现在要求出他们所有的交点，然后在交点处将线段打断为两条线段，如果交点在线段的起点或终点，则不做操作，最后返回所有线段集合，即：得到的线段集合中都没有与其他线段在除端点处相交的情况。
+        /// </summary>
+        /// <param name="curves"></param>
+        /// <returns></returns>
+        public static IEnumerable<Curve> BreakCurve(IEnumerable<Curve> curves)
+        {
+            if (curves == null || !curves.Any())
+            {
+                return new List<Curve>();
+            }
+            var curvesList = new List<Curve>();
+            var curvesList2 = curves.ToList();
+            var splitPoints = curvesList2.ToDictionary(d => d, d => new List<Point3d>());
+            for (int i = 0; i < curvesList2.Count; i++)
+            {
+                for (int j = i + 1; j < curvesList2.Count; j++)
+                {
+                    var points = new Point3dCollection();
+                    curvesList2[i].IntersectWith(curves.ToList()[j], Intersect.OnBothOperands, points, IntPtr.Zero, IntPtr.Zero);
+                    if (points.Count > 0)
+                    {
+
+                        splitPoints[curvesList2[i]].AddRange(points.ToList<Point3d>());
+
+                        splitPoints[curvesList2[j]].AddRange(points.ToList<Point3d>());
+                    }
+                }
+            }
+
+            foreach (var splitPoint in splitPoints)
+            {
+                if (splitPoint.Value.Count > 0)
+                {
+                    var points = splitPoint.Value.Distinct().OrderBy(d => splitPoint.Key.GetDistAtPoint(d)).ToPoint3dCollection();
+                    curvesList.AddRange(splitPoint.Key.GetSplitCurves(points).ToList<Curve>());
+                }
+                else
+                {
+                    curvesList.Add(splitPoint.Key);
+                }
+            }
+
+            return curvesList;
+        }
 
         /// <summary>
         /// 按面积比例分割曲线成两份
