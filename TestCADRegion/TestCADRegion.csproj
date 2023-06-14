@@ -9,8 +9,14 @@
 		<GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
 		<GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
 		<GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-		
 	</PropertyGroup>
+	<PropertyGroup>
+    <StartAction>Program</StartAction>
+    <StartProgram>C:\Program Files\Autodesk\AutoCAD 2014\acad.exe</StartProgram>
+    <StartArguments>/nologo /b "start.scr"</StartArguments>
+    <DocumentationFile>
+    </DocumentationFile>
+  </PropertyGroup>
 	<ItemGroup>
 	  <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
 	</ItemGroup>
@@ -82,6 +88,11 @@
 			<HintPath>..\Lib\ZWCAD\R2021\ZwManaged.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
+	</ItemGroup>
+	<ItemGroup>
+	  <None Update="start.scr">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 	<ProjectExtensions><VisualStudio><UserProperties BuildVersion_BuildVersioningStyle="" BuildVersion_StartDate="2000/1/1" BuildVersion_UpdateAssemblyVersion="True" BuildVersion_UpdateFileVersion="True" BuildVersion_UseGlobalSettings="True" /></VisualStudio></ProjectExtensions>
 </Project>

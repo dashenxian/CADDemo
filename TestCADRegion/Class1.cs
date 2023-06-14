@@ -19,8 +19,14 @@ using Autodesk.AutoCAD.ApplicationServices;
 namespace TestCADRegion
 {
 
-    public class Class1 : IExtensionApplication
+    public class Class1 //: IExtensionApplication
     {
+        [CommandMethod("Test")]
+        public void Test()
+        {
+            var ent = BaseTools.Select("");
+        }
+
         /// <summary>
         /// 闭合区域检测
         /// </summary>
@@ -107,19 +113,51 @@ namespace TestCADRegion
         }
 
 
-        [CommandMethod("Test")]
-        public void Test()
+        [CommandMethod("CheckForPickfirstSelection", CommandFlags.UsePickSet)]
+        public static void CheckForPickfirstSelection()
         {
-            var objs = BaseTools.Selects("选择对象");
-            if (objs.Count() == 0)
+            // Get the current document
+            Editor acDocEd = Application.DocumentManager.MdiActiveDocument.Editor;
+
+            // Get the PickFirst selection set
+            PromptSelectionResult acSSPrompt;
+            acSSPrompt = acDocEd.SelectImplied();
+
+            SelectionSet acSSet;
+
+            // If the prompt status is OK, objects were selected before
+            // the command was started
+            if (acSSPrompt.Status == PromptStatus.OK)
             {
-                return;
+                acSSet = acSSPrompt.Value;
+
+                Application.ShowAlertDialog("Number of objects in Pickfirst selection: " +
+                                            acSSet.Count.ToString());
+            }
+            else
+            {
+                Application.ShowAlertDialog("Number of objects in Pickfirst selection: 0");
             }
 
-            var curves = BaseTools.BreakCurve(objs.OfType<Curve>());
-            var regions = Region.CreateFromCurves(curves.ToDBObjectCollection());
-            DataBaseTools.AddToModelSpace(regions.ToList<Entity>());
-            //DataBaseTools.Clone(objs, "d:/1.dwg");
+            // Clear the PickFirst selection set
+            ObjectId[] idarrayEmpty = new ObjectId[0];
+            acDocEd.SetImpliedSelection(idarrayEmpty);
+
+            // Request for objects to be selected in the drawing area
+            acSSPrompt = acDocEd.GetSelection();
+
+            // If the prompt status is OK, objects were selected
+            if (acSSPrompt.Status == PromptStatus.OK)
+            {
+                acSSet = acSSPrompt.Value;
+
+                Application.ShowAlertDialog("Number of objects selected: " +
+                                            acSSet.Count.ToString());
+            }
+            else
+            {
+                Application.ShowAlertDialog("Number of objects selected: 0");
+            }
         }
         /// <summary>
         /// 竖排文本
@@ -295,15 +333,6 @@ namespace TestCADRegion
             DataBaseTools.AddIn(pl);
         }
 
-        [CommandMethod("Test2")]
-        public void Test2()
-        {
-            var c1 = BaseTools.Select("选择线") as Line;
-            var v1 = c1.GetFirstDerivative(c1.Length);
-            var v2 = v1.GetPerpendicularVector();
-            var v3 = v2.GetNormal();
-            var v4 = v1.GetNormal();
-        }
         private void Trim()
         {
             // Get the current document and database
@@ -379,7 +408,7 @@ namespace TestCADRegion
         }
 
 
-        private static void Test1()
+        private static void TestLock()
         {
             var str = File.ReadAllText(@"C:\Users\Administrator\Desktop\无标题.json");
             var qys = Newtonsoft.Json.JsonConvert.DeserializeObject<List<QY>>(str);
