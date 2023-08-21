@@ -3,7 +3,10 @@ using System.Linq;
 using AcDotNetTool;
 using System.Collections.Generic;
 using System.IO;
+using System.Windows.Forms;
 using AcDotNetTool.Extensions;
+using AutoCAD;
+using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 #if ZWCAD
 using ZwSoft.ZwCAD.Runtime;
 using ZwSoft.ZwCAD.DatabaseServices;
@@ -19,14 +22,71 @@ using Autodesk.AutoCAD.ApplicationServices;
 namespace TestCADRegion
 {
 
-    public class Class1 //: IExtensionApplication
+    public class Class1 : IExtensionApplication
     {
         [CommandMethod("Test")]
         public void Test()
         {
-            var ent = BaseTools.Select("");
+            for (int i = 0; i < 100; i++)
+            {
+                using var pl = new Polyline();
+                pl.AddVertexAt(0, new Point2d(0, 0), 0, 0, 0);
+                pl.AddVertexAt(1, new Point2d(10, 0), 0, 0, 0);
+                pl.AddToModelSpace();
+            }
         }
+        [CommandMethod("Test1")]
+        public void Test1()
+        {
+            var path = "d:/";
+            object oCad = Autodesk.AutoCAD.ApplicationServices.Application.AcadApplication;
+            Type tpCad = oCad.GetType();
+            object oDoc = tpCad.InvokeMember("ActiveDocument", System.Reflection.BindingFlags.GetProperty, null, oCad, null);
+            Type tpDoc = oDoc.GetType();
+            object ass = tpDoc.InvokeMember("ActiveSelectionSet", System.Reflection.BindingFlags.GetProperty, null, oDoc, null);
+            tpDoc.InvokeMember("Export", System.Reflection.BindingFlags.InvokeMethod, null, oDoc, new object[] { path + "\\abc", "DWG", ass });
+            var ed = Application.DocumentManager.MdiActiveDocument.Editor;
+            ed.SetImpliedSelection(new ObjectId[] { });
+            //GC.Collect();
+            //GC.WaitForPendingFinalizers();
+        }
+        
+        [CommandMethod(globalName: "WH")]
+        public void Wh()
+        {
+            Entity ent = BaseTools.Select("");
+            BaseTools.WriteMessage(ent.Handle.Value + "");
 
+        }
+        public void ScaleMultiLineText(MText mtext, double scaleFactor)
+        {
+            // 获取多行文字的位置和大小
+            Point3d location = mtext.Location;
+            double height = mtext.ActualHeight;
+            double width = mtext.ActualWidth;
+
+            // 放大或缩小倍数
+            double scale = scaleFactor;
+
+            // 计算放大或缩小后的高度和宽度
+            double scaledHeight = height * scale;
+            double scaledWidth = width * scale;
+
+            // 计算放大或缩小后的位置
+            double deltaX = (width - scaledWidth) / 2.0;
+            double deltaY = (height - scaledHeight) / 2.0;
+            Point3d scaledLocation = new Point3d(location.X + deltaX, location.Y + deltaY, location.Z);
+
+            // 执行放大或缩小操作
+            using (Transaction tr = mtext.Database.TransactionManager.StartTransaction())
+            {
+                mtext.Location = scaledLocation;
+                mtext.Height = scaledHeight;
+                mtext.Width = scaledWidth;
+
+                tr.Commit();
+            }
+        }
         /// <summary>
         /// 闭合区域检测
         /// </summary>
@@ -474,6 +534,54 @@ namespace TestCADRegion
         public void Initialize()
         {
             //throw new NotImplementedException();
+            //Application.DocumentManager.DocumentCreateStarted += DocumentManager_DocumentCreateStarted;
+            //Application.DocumentManager.DocumentCreated += DocumentManager_DocumentCreated;
+            //Application.DocumentManager.DocumentCreationCanceled += DocumentManager_DocumentCreationCanceled;
+            //Application.DocumentManager.DocumentDestroyed += DocumentManager_DocumentDestroyed;
+            //Application.DocumentManager.DocumentToBeDestroyed += DocumentManager_DocumentToBeDestroyed;
+            //Application.DocumentManager.DocumentToBeDeactivated += DocumentManager_DocumentToBeDeactivated;
+            //Application.DocumentManager.DocumentActivated += DocumentManager_DocumentActivated;
+            //var login = new LoginFrom();
+            //var handle = Application.MainWindow.Handle;
+            //NativeWindow main = new NativeWindow();
+            //main.AssignHandle(handle);
+            //login.ShowDialog(main);
+
+        }
+
+        private void DocumentManager_DocumentActivated(object sender, DocumentCollectionEventArgs e)
+        {
+            BaseTools.WriteMessage("DocumentManager_DocumentActivated\r\n");
+        }
+
+        private void DocumentManager_DocumentToBeDeactivated(object sender, DocumentCollectionEventArgs e)
+        {
+            BaseTools.WriteMessage("DocumentManager_DocumentToBeDeactivated\r\n");
+        }
+
+        private void DocumentManager_DocumentToBeDestroyed(object sender, DocumentCollectionEventArgs e)
+        {
+            BaseTools.WriteMessage("DocumentManager_DocumentToBeDestroyed\r\n");
+        }
+
+        private void DocumentManager_DocumentDestroyed(object sender, DocumentDestroyedEventArgs e)
+        {
+            BaseTools.WriteMessage("DocumentManager_DocumentDestroyed\r\n");
+        }
+
+        private void DocumentManager_DocumentCreationCanceled(object sender, DocumentCollectionEventArgs e)
+        {
+            BaseTools.WriteMessage("DocumentManager_DocumentCreationCanceled\r\n");
+        }
+
+        private void DocumentManager_DocumentCreated(object sender, DocumentCollectionEventArgs e)
+        {
+            BaseTools.WriteMessage("DocumentManager_DocumentCreated\r\n");
+        }
+
+        private void DocumentManager_DocumentCreateStarted(object sender, DocumentCollectionEventArgs e)
+        {
+            BaseTools.WriteMessage("DocumentManager_DocumentCreateStarted\r\n");
         }
 
         public void Terminate()

@@ -383,5 +383,66 @@ namespace AcDotNetTool
         }
 
         #endregion
+
+        #region 凸包算法
+        /// <summary>
+        /// 计算点集合的凸包
+        /// </summary>
+        /// <param name="pointsSource">点集合</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException">点集合不重复点少于3个</exception>
+        public static IEnumerable<Point2d> GetConvexHull(IEnumerable<Point2d> pointsSource)
+        {
+            var points = pointsSource?.Distinct().ToList();
+            if (points == null || points.Count < 3)
+            {
+                throw new ArgumentException("点集合不能少于3个");
+            }
+            var upperPoints = new List<Point2d>(points.Count) { points[0], points[1] };
+            var lowerPoints = new List<Point2d>(points.Count) { points[points.Count - 1], points[points.Count - 2] };
+            for (var i = 2; i < points.Count; i++)
+            {
+                upperPoints.Add(points[i]);
+                while (upperPoints.Count >= 3)
+                {
+                    var n = upperPoints.Count;
+                    var v1 = upperPoints[n - 2] - upperPoints[n - 3];
+                    var v2 = upperPoints[n - 1] - upperPoints[n - 2];
+                    if (v1.X * v2.Y - v2.X * v1.Y >= 0)
+                    {
+                        upperPoints.RemoveAt(n - 2);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+            for (var i = points.Count - 3; i >= 0; i--)
+            {
+                lowerPoints.Add(points[i]);
+                while (lowerPoints.Count >= 3)
+                {
+                    var n = lowerPoints.Count;
+                    var v1 = lowerPoints[n - 2] - lowerPoints[n - 3];
+                    var v2 = lowerPoints[n - 1] - lowerPoints[n - 2];
+                    if (v1.X * v2.Y - v2.X * v1.Y >= 0)
+                    {
+                        lowerPoints.RemoveAt(n - 2);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+            if (lowerPoints.Count > 1)
+            {
+                lowerPoints.RemoveAt(0);
+            }
+            var result = upperPoints.Concat(lowerPoints);
+            return result.ToList();
+        }
+        #endregion
     }
 }

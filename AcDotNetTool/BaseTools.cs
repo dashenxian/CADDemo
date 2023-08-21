@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using AcDotNetTool.Extensions;
-using System.Security.Cryptography;
-
 
 #if ZWCAD
 using ZwSoft.ZwCAD.ApplicationServices;
@@ -15,12 +12,13 @@ using ZwSoft.ZwCAD.Geometry;
 using ZwSoft.ZwCAD.Runtime;
 using ZwSoft.ZwCAD.BoundaryRepresentation;
 #elif AutoCAD
+
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
-using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.BoundaryRepresentation;
+
 #endif
 
 // ReSharper disable PossibleMultipleEnumeration
@@ -47,6 +45,7 @@ namespace AcDotNetTool
         {
             return ToPoint3d(p2d, 0);
         }
+
         /// <summary>
         /// 2d点转3d点
         /// </summary>
@@ -57,6 +56,7 @@ namespace AcDotNetTool
         {
             return new Point3d(p2d.X, p2d.Y, z);
         }
+
         /// <summary>
         /// 3d点转2d点
         /// </summary>
@@ -66,6 +66,7 @@ namespace AcDotNetTool
         {
             return new Point2d(point.X, point.Y);
         }
+
         /// <summary>
         /// 转换为3d范围，Z坐标为0
         /// </summary>
@@ -75,6 +76,7 @@ namespace AcDotNetTool
         {
             return new Extents3d(Extents2d.MinPoint.ToPoint3d(), Extents2d.MaxPoint.ToPoint3d());
         }
+
         /// <summary>
         /// 转换为2d范围，忽略Z坐标
         /// </summary>
@@ -86,6 +88,7 @@ namespace AcDotNetTool
                 Extents3d.MinPoint.X, Extents3d.MinPoint.Y,
                 Extents3d.MaxPoint.X, Extents3d.MaxPoint.Y);
         }
+
         /// <summary>
         /// 计算两点的中点
         /// </summary>
@@ -99,6 +102,7 @@ namespace AcDotNetTool
                 (p1.Y + p2.Y) / 2,
                 (p1.Z + p2.Z) / 2);
         }
+
         /// <summary>
         /// 计算两点的中点
         /// </summary>
@@ -111,6 +115,7 @@ namespace AcDotNetTool
                 (p1.X + p2.X) / 2,
                 (p1.Y + p2.Y) / 2);
         }
+
         /// <summary>
         /// 计算两点之间的距离
         /// </summary>
@@ -122,6 +127,7 @@ namespace AcDotNetTool
             var distance = Math.Sqrt(Math.Pow(p1.X - p2.X, 2) + Math.Pow(p1.X - p2.Y, 2) + Math.Pow(p1.Z - p2.Z, 2));
             return distance;
         }
+
         /// <summary>
         /// 3d点转2d点
         /// </summary>
@@ -131,6 +137,7 @@ namespace AcDotNetTool
         {
             return points.Select(i => new Point2d(i.X, i.Y));
         }
+
         /// <summary>
         /// 3d点转2d点
         /// </summary>
@@ -140,9 +147,11 @@ namespace AcDotNetTool
         {
             return points.Select(i => new Point3d(i.X, i.Y, 0));
         }
-        #endregion
 
-        #region 带容差比较    
+        #endregion 坐标点转换
+
+        #region 带容差比较
+
         /// <summary>
         /// 带容差比较比较两个坐标点是否相同
         /// </summary>
@@ -155,6 +164,7 @@ namespace AcDotNetTool
                    && Math.Abs(point1.Y - point2.Y) < tolerance
                    && Math.Abs(point1.Z - point2.Z) < tolerance;
         }
+
         /// <summary>
         /// 带容差比较比较两个坐标点是否相同
         /// </summary>
@@ -165,6 +175,7 @@ namespace AcDotNetTool
         {
             return Equal(point1, point2, Tolerance.EqualPoint);
         }
+
         /// <summary>
         /// 比较两个坐标点是否相同
         /// </summary>
@@ -176,9 +187,11 @@ namespace AcDotNetTool
             return Math.Abs(point1.X - point2.X) < Tolerance.EqualPoint
                    && Math.Abs(point1.Y - point2.Y) < Tolerance.EqualPoint;
         }
-        #endregion
+
+        #endregion 带容差比较
 
         #region ObjectIdCollection转换
+
         /// <summary>
         /// 转换为List
         /// </summary>
@@ -193,6 +206,7 @@ namespace AcDotNetTool
             }
             return list;
         }
+
         /// <summary>
         /// 转换为ObjectIdCollection对象
         /// </summary>
@@ -207,6 +221,7 @@ namespace AcDotNetTool
             }
             return list;
         }
+
         /// <summary>
         /// 转为List
         /// </summary>
@@ -225,6 +240,7 @@ namespace AcDotNetTool
             }
             return list;
         }
+
         /// <summary>
         /// 列表转为cad集合
         /// </summary>
@@ -242,7 +258,7 @@ namespace AcDotNetTool
             return list;
         }
 
-        #endregion
+        #endregion ObjectIdCollection转换
 
         /// <summary>
         /// 创建面域
@@ -284,7 +300,7 @@ namespace AcDotNetTool
         public static Polyline ToPolyline(this Region region)
         {
             Polyline pl = new Polyline();
-            var brep = new Brep(region);
+            using var brep = new Brep(region);
             var edges = brep.Edges.ToList();
             var list = new List<PolylinePoint>();
             var curEdge = edges[0];
@@ -350,13 +366,160 @@ namespace AcDotNetTool
             return pl;
         }
 
+        /// <summary>
+        /// 面域转为多段线
+        /// </summary>
+        /// <param name="reg"></param>
+        /// <returns></returns>
+        private static DBObjectCollection PolylineFromRegion(this Region reg)
+        {
+            // We will return a collection of entities (should include closed Polylines and other closed curves, such as Circles)
+            var res = new DBObjectCollection();
+            // Explode Region -> collection of Curves / Regions
+            var cvs = new DBObjectCollection();
+            reg.Explode(cvs);
+            // Create a plane to convert 3D coords into Region coord system
+            using Plane pl = new Plane(new Point3d(0, 0, 0), reg.Normal);
+            bool finished = false;
+            while (!finished && cvs.Count > 0)
+            {
+                // Count the Curves and the non-Curves, and find the index of the first Curve in the collection
+                int cvCnt = 0, nonCvCnt = 0, fstCvIdx = -1;
+                for (int i = 0; i < cvs.Count; i++)
+                {
+                    Curve tmpCv = cvs[i] as Curve;
+                    if (tmpCv == null)
+                        nonCvCnt++;
+                    else
+                    {
+                        // Closed curves can go straight into the results collection, and aren't added to the Curve count
+                        if (tmpCv.Closed)
+                        {
+                            res.Add(tmpCv);
+                            cvs.Remove(tmpCv);
+                            // Decrement, so we don't miss an item
+                            i--;
+                        }
+                        else
+                        {
+                            cvCnt++;
+                            if (fstCvIdx == -1)
+                                fstCvIdx = i;
+                        }
+                    }
+                }
+                if (fstCvIdx >= 0)
+                {
+                    // For the initial segment take the first Curve in the collection
+                    Curve fstCv = (Curve)cvs[fstCvIdx];
+                    // The resulting Polyline
+                    Polyline p = new Polyline();
+                    // Set common entity properties from the Region
+                    p.SetPropertiesFrom(reg);
+                    // Add the first two vertices, but only set the bulge on the first (the second will be set retroactively from the second segment)
+                    // We also assume the first segment is counter- clockwise (the default for arcs), as we're not swapping the order of the vertices to make them fit the Polyline's order
+                    p.AddVertexAt(p.NumberOfVertices, fstCv.StartPoint.Convert2d(pl), BulgeFromCurve(fstCv, false), 0, 0);
+                    p.AddVertexAt(p.NumberOfVertices, fstCv.EndPoint.Convert2d(pl), 0, 0, 0);
+                    cvs.Remove(fstCv);
+                    // The next point to look for
+                    Point3d nextPt = fstCv.EndPoint;
+                    // We no longer need the curve
+                    fstCv.Dispose();
+                    // Find the line that is connected to the next point
+                    // If for some reason the lines returned were not connected, we could loop endlessly.
+                    // So we store the previous curve count and assume that if this count has not been decreased by looping completely through the segments once, then we should not continue to loop.
+                    // Hopefully this will never happen, as the curves should form a closed loop, but anyway...
+                    // Set the previous count as artificially high, so that we loop once, at least.
+                    int prevCnt = cvs.Count + 1;
+                    while (cvs.Count > nonCvCnt && cvs.Count < prevCnt)
+                    {
+                        prevCnt = cvs.Count;
+                        foreach (DBObject obj in cvs)
+                        {
+                            var cv = obj as Curve;
+                            if (cv == null) continue;
+                            // If one end of the curve connects with the point we're looking for...
+                            if (cv.StartPoint == nextPt || cv.EndPoint == nextPt)
+                            {
+                                // Calculate the bulge for the curve and set it on the previous vertex
+                                double bulge = BulgeFromCurve(cv, cv.EndPoint == nextPt);
+                                if (bulge != 0.0)
+                                    p.SetBulgeAt(p.NumberOfVertices - 1, bulge);
+                                // Reverse the points, if needed
+                                if (cv.StartPoint == nextPt) nextPt = cv.EndPoint;
+                                else
+                                    // cv.EndPoint == nextPt
+                                    nextPt = cv.StartPoint;
+                                // Add out new vertex (bulge will be set next time through, as needed)
+                                p.AddVertexAt(p.NumberOfVertices, nextPt.Convert2d(pl), 0, 0, 0);
+                                // Remove our curve from the list, which decrements the count, of course
+                                cvs.Remove(cv);
+                                cv.Dispose();
+                                break;
+                            }
+                        }
+                    }
+                    // Once we have added all the Polyline's vertices, transform it to the original region's plane
+                    p.TransformBy(Matrix3d.PlaneToWorld(pl));
+                    res.Add(p);
+                    if (cvs.Count == nonCvCnt)
+                        finished = true;
+                }
+                // If there are any Regions in the collection, recurse to explode and add their geometry
+                if (nonCvCnt > 0 && cvs.Count > 0)
+                {
+                    foreach (DBObject obj in cvs)
+                    {
+                        Region subReg = obj as Region;
+                        if (subReg == null) continue;
+                        DBObjectCollection subRes = PolylineFromRegion(subReg);
+                        foreach (DBObject o in subRes)
+                            res.Add(o);
+                        cvs.Remove(subReg);
+                        subReg.Dispose();
+                    }
+                }
+                if (cvs.Count == 0)
+                    finished = true;
+            }
 
-        class PolylinePoint
+            return res;
+        }
+
+        /// <summary>
+        /// Helper function to calculate the bulge for arcs
+        /// </summary>
+        /// <param name="cv"></param>
+        /// <param name="clockwise"></param>
+        /// <returns></returns>
+        private static double BulgeFromCurve(Curve cv, bool clockwise)
+        {
+            double bulge = 0.0;
+            var a = cv as Arc;
+            if (a == null) return bulge;
+            double newStart;
+            // The start angle is usually greater than the end, as arcs are all counter-clockwise.
+            // (If it isn't it's because the arc crosses the 0-degree line, and we can subtract 2PI from the start angle.)
+            if (a.StartAngle > a.EndAngle)
+                newStart = a.StartAngle - 8 * Math.Atan(1);
+            else
+                newStart = a.StartAngle;
+            // Bulge is defined as the tan of one fourth of the included angle
+            bulge = Math.Tan((a.EndAngle - newStart) / 4);
+            // If the curve is clockwise, we negate the bulge
+            if (clockwise)
+                bulge = -bulge;
+            return bulge;
+        }
+
+        private class PolylinePoint
         {
             public Point2d Point2d { get; set; }
             public double Bulge { get; set; }
         }
+
         #region 角度与弧度转换
+
         /// <summary>
         /// 角度转化为弧度
         /// </summary>
@@ -366,6 +529,7 @@ namespace AcDotNetTool
         {
             return degree * Math.PI / 180;
         }
+
         /// <summary>
         /// 弧度转换角度
         /// </summary>
@@ -375,6 +539,7 @@ namespace AcDotNetTool
         {
             return angle * 180 / Math.PI;
         }
+
         /// <summary>
         /// 获取角度
         /// </summary>
@@ -398,21 +563,65 @@ namespace AcDotNetTool
             bulge *= arc.Normal.Z;
             return bulge;
         }
-        #endregion
 
-
+        #endregion 角度与弧度转换
 
         #region 命令行输出
 
         public static void WriteMessage(string msg)
         {
+            if (Application.DocumentManager.MdiActiveDocument == null || Application.DocumentManager.MdiActiveDocument.Editor == null)
+            {
+                return;
+            }
             var ed = Application.DocumentManager.MdiActiveDocument.Editor;
             ed.WriteMessage(msg);
         }
-        #endregion
 
+        #endregion 命令行输出
+
+        #region 命令行输入
+
+        /// <summary>
+        /// 获取用户输入
+        /// </summary>
+        /// <param name="msg"></param>
+        /// <returns></returns>
+        public static int GetInt(string msg = "")
+        {
+            Editor editor = Application.DocumentManager.MdiActiveDocument.Editor;
+            var result = editor.GetInteger(string.IsNullOrEmpty(msg) ? "请输入数值：" : msg);
+            if (result.Status == PromptStatus.OK)
+            {
+                return result.Value;
+                // 使用用户输入的数值进行后续处理
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// 获取用户输入
+        /// </summary>
+        /// <param name="msg"></param>
+        /// <returns></returns>
+        public static double GetDouble(string msg = "")
+        {
+            Editor editor = Application.DocumentManager.MdiActiveDocument.Editor;
+            PromptDoubleResult result = editor.GetDouble(string.IsNullOrEmpty(msg) ? "请输入数值：" : msg);
+            if (result.Status == PromptStatus.OK)
+            {
+                return result.Value;
+                // 使用用户输入的数值进行后续处理
+            }
+
+            return 0;
+        }
+
+        #endregion 命令行输入
 
         #region 选择实体
+
         /// <summary>
         /// 选择点
         /// </summary>
@@ -460,6 +669,7 @@ namespace AcDotNetTool
         {
             return Selects(word, Array.Empty<FilterType>());
         }
+
         /// <summary>
         /// 提示用户选择实体
         /// </summary>
@@ -477,7 +687,6 @@ namespace AcDotNetTool
             opt.MessageForAdding = word;
             if (tps == null || !tps.Any())
             {
-
                 ents = ed.GetSelection(opt);
             }
             else// 按照过滤器进行选择
@@ -518,14 +727,17 @@ namespace AcDotNetTool
         {
             Curve,
             Dimension,
+
             /// <summary>
             /// 包含Polyline2d（二维多段线）、Polyline3d（三维多段线），不包含pline多段线;
             /// </summary>
             Polyline,
+
             /// <summary>
             /// 可用，多段线，用pline绘制的
             /// </summary>
             Lwpolyline,
+
             BlockRef,
             Circle,
             Line,
@@ -533,7 +745,8 @@ namespace AcDotNetTool
             Text,
             MText
         }
-        #endregion
+
+        #endregion 选择实体
 
         /// <summary>
         /// 是否为逆时针
@@ -599,6 +812,7 @@ namespace AcDotNetTool
         }
 
         #region 是否在范围内
+
         /// <summary>
         /// 判断点在曲线上
         /// </summary>
@@ -610,6 +824,7 @@ namespace AcDotNetTool
             var closedPoint = curve.GetClosestPointTo(point, false);
             return closedPoint.Equal(point);
         }
+
         /// <summary>
         /// 判断曲线是否在另一条曲线范围内
         /// </summary>
@@ -620,6 +835,7 @@ namespace AcDotNetTool
         {
             return IsInside(outLine, inLine, Tolerance.EqualPoint);
         }
+
         /// <summary>
         /// 判断曲线是否在另一条曲线范围内
         /// </summary>
@@ -669,6 +885,7 @@ namespace AcDotNetTool
             outReg.Dispose();
             return result;
         }
+
         /// <summary>
         /// 判断点是否在曲线范围内
         /// </summary>
@@ -679,6 +896,7 @@ namespace AcDotNetTool
         {
             return IsInside(outLine, point, Tolerance);
         }
+
         /// <summary>
         /// 判断点是否在曲线范围内
         /// </summary>
@@ -715,6 +933,7 @@ namespace AcDotNetTool
             outL.Dispose();
             return false;
         }
+
         /// <summary>
         /// 判断边界是否在范围内
         /// </summary>
@@ -725,6 +944,7 @@ namespace AcDotNetTool
         {
             return IsInside(outExtent, inExtent, Tolerance.EqualPoint);
         }
+
         /// <summary>
         /// 判断边界是否在范围内
         /// </summary>
@@ -745,6 +965,7 @@ namespace AcDotNetTool
 
             return false;
         }
+
         /// <summary>
         /// 判断直线是否在范围内
         /// </summary>
@@ -775,6 +996,7 @@ namespace AcDotNetTool
             }
             return true;
         }
+
         /// <summary>
         /// 判断点在范围内
         /// </summary>
@@ -783,9 +1005,9 @@ namespace AcDotNetTool
         /// <returns></returns>
         public static bool IsInside(Extents3d outExtent, Point3d point)
         {
-
             return IsInside(outExtent, point, Tolerance.EqualPoint);
         }
+
         /// <summary>
         /// 判断点在范围内
         /// </summary>
@@ -808,7 +1030,8 @@ namespace AcDotNetTool
 
             return false;
         }
-        #endregion
+
+        #endregion 是否在范围内
 
         /// <summary>
         /// 修改曲线长度
@@ -858,6 +1081,7 @@ namespace AcDotNetTool
         }
 
         #region 不均匀偏移多段线
+
         /// <summary>
         /// 不均匀偏移多段线
         /// </summary>
@@ -998,7 +1222,6 @@ namespace AcDotNetTool
                 }
 
                 intersectPoints.Add(nextPoint);
-
             }
             for (int i = 0; i < lines.Count; i++)
             {
@@ -1016,9 +1239,11 @@ namespace AcDotNetTool
                 }
             }
         }
-        #endregion
+
+        #endregion 不均匀偏移多段线
 
         #region 分割曲线
+
         /// <summary>
         /// 在一个AutoCAD图形中有n条曲线Curve，其中包含Line,Polyline类型的线段,现在要求出他们所有的交点，然后在交点处将线段打断为两条线段，如果交点在线段的起点或终点，则不做操作，最后返回所有线段集合，即：得到的线段集合中都没有与其他线段在除端点处相交的情况。
         /// </summary>
@@ -1041,7 +1266,6 @@ namespace AcDotNetTool
                     curvesList2[i].IntersectWith(curves.ToList()[j], Intersect.OnBothOperands, points, IntPtr.Zero, IntPtr.Zero);
                     if (points.Count > 0)
                     {
-
                         splitPoints[curvesList2[i]].AddRange(points.ToList<Point3d>());
 
                         splitPoints[curvesList2[j]].AddRange(points.ToList<Point3d>());
@@ -1079,6 +1303,7 @@ namespace AcDotNetTool
             var line = new Line(splitCurve.StartPoint, splitCurve.EndPoint);
             return GetPersentsSplitCurves(sources, line, expectPersent, maxTrialCount);
         }
+
         /// <summary>
         /// 按面积比例分割曲线成两份,速度慢一倍，适应性更高
         /// </summary>
@@ -1326,8 +1551,7 @@ namespace AcDotNetTool
         /// <param name="splitCurve">分割曲线</param>
         /// <param name="maxSplitNumber">分割后的区域数量，当被分割曲线和分割曲线有超过2个交点时，可以被分割成超过2个区域</param>
         /// <returns></returns>
-        public static IEnumerable<IEnumerable<Polyline>> GetSplitCurves(this IEnumerable<Polyline> sources, Curve splitCurve,
-            int maxSplitNumber = 2)
+        public static IEnumerable<IEnumerable<Polyline>> GetSplitCurves(this IEnumerable<Polyline> sources, Curve splitCurve, int maxSplitNumber = 2)
         {
             if (sources == null || sources.Count() == 0)
             {
@@ -1353,7 +1577,7 @@ namespace AcDotNetTool
                 var inLines = sources.Skip(1).ToList();
                 foreach (var inLine in inLines)
                 {
-                    var points = new Point3dCollection();
+                    using var points = new Point3dCollection();
                     inLine.IntersectWith(splitCurve, Intersect.OnBothOperands, points, IntPtr.Zero, IntPtr.Zero);
                     //环岛需要分割，分割后在分别分配
                     if (points.Count > 1)
@@ -1391,7 +1615,6 @@ namespace AcDotNetTool
                         }
                     }
                 }
-
             }
 
             var result = resultTemp.Select(i =>
@@ -1404,16 +1627,57 @@ namespace AcDotNetTool
         }
 
         #region 中间类型
+
         /// <summary>
         /// 分割带有环岛的区域多段线临时类型
         /// </summary>
-        class SplitCurvesTemp
+        private class SplitCurvesTemp
         {
             public Polyline OutLine { get; set; }
             public IList<Polyline> InLines { get; set; } = new List<Polyline>();
         }
-        #endregion
 
+        #endregion 中间类型
+
+        #endregion 分割曲线
+
+        #region 释放对象
+        /// <summary>
+        /// 释放列表对象和列表中的对象
+        /// </summary>
+        /// <param name="list">列表</param>
+        public static void DisposeAll(this IEnumerable list)
+        {
+            foreach (var item in list)
+            {
+                if (item is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+            }
+            if (list is IDisposable dis)
+            {
+                dis.Dispose();
+            }
+        }
+        /// <summary>
+        /// 释放列表对象和列表中的对象
+        /// </summary>
+        /// <param name="list">列表</param>
+        public static void DisposeAll(this ICollection list)
+        {
+            foreach (var item in list)
+            {
+                if (item is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+            }
+            if (list is IDisposable dis)
+            {
+                dis.Dispose();
+            }
+        }
         #endregion
     }
 }
