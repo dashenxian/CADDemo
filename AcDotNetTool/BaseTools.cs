@@ -976,7 +976,7 @@ namespace AcDotNetTool
         {
             //直线的端点、交点、交点的中点都在内部，则直线在内部
             var points = new Point3dCollection();
-            inLine.IntersectWith(outLine, Intersect.OnBothOperands, points, 0, 0);
+            inLine.IntersectWith(outLine, Intersect.OnBothOperands, points, IntPtr.Zero, IntPtr.Zero);
             var list = new List<Point2d>();
             list.Add(inLine.StartPoint.ToPoint2d());
             foreach (Point3d point in points)

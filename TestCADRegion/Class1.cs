@@ -50,7 +50,7 @@ namespace TestCADRegion
             //GC.Collect();
             //GC.WaitForPendingFinalizers();
         }
-        
+
         [CommandMethod(globalName: "WH")]
         public void Wh()
         {
@@ -517,7 +517,7 @@ namespace TestCADRegion
                 var bytes = new byte[fs.Length];
                 fs.Read(bytes, 0, (int)fs.Length);
             }
-            catch (System.Exception ex)
+            catch
             {
                 string note = string.Empty;
                 return;

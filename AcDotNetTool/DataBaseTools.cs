@@ -326,7 +326,6 @@ namespace AcDotNetTool
         /// <returns></returns>
         public static ObjectId AddIn(this Entity ent)
         {
-            ObjectId id;
             var db = DocumentDatabase();
             return AddIn(ent, db);
         }

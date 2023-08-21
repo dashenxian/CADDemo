@@ -233,7 +233,7 @@ namespace AcDotNetTool
         public static Point3dCollection Intersect(Curve cur1, Curve cur2, Intersect inter)
         {
             Point3dCollection ptc = new Point3dCollection();
-            cur1.IntersectWith(cur2, inter, ptc, 0, 0);
+            cur1.IntersectWith(cur2, inter, ptc, IntPtr.Zero, IntPtr.Zero);
             return ptc;
         }
         /// <summary>
